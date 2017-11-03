@@ -9,6 +9,7 @@ path = "src/bin/sw-discover.rs"
 doc = false
 
 [dependencies]
+clap = "2"
 consul = "^0.2"
 tabwriter = "^1.0"
 
