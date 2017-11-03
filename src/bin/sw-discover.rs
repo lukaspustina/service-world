@@ -23,12 +23,17 @@ fn main() {
     service_names.sort();
     for service in service_names {
         if let Some(ref s_filter) = service_filter {
-            if !s_filter.contains(&service) {
+            if !s_filter.contains(service) {
                 continue;
             }
         }
         let nodes = client.catalog.get_nodes(service.clone()).unwrap();
-        let _ = writeln!(&mut tw, "Service '{}' tagged with {:?}", service, services.get(service).unwrap());
+        let _ = writeln!(
+            &mut tw,
+            "Service '{}' tagged with {:?}",
+            service,
+            &services[service]
+        );
         for node in nodes {
             if let Some(ref s_tags) = tag_filter {
                 let set: HashSet<_> = s_tags.iter().chain(node.ServiceTags.iter()).collect();
@@ -36,7 +41,16 @@ fn main() {
                     continue;
                 }
             }
-            let _ = writeln!(&mut tw, "\t* Node '{}'\tip:{},\tservice: id:{},\tname:{},\tport:{},\ttags:{:?}", node.Node, node.Address, node.ServiceID, node.ServiceName, node.ServicePort, node.ServiceTags );
+            let _ = writeln!(
+                &mut tw,
+                "\t* Node '{}'\tip:{},\tservice: id:{},\tname:{},\tport:{},\ttags:{:?}",
+                node.Node,
+                node.Address,
+                node.ServiceID,
+                node.ServiceName,
+                node.ServicePort,
+                node.ServiceTags
+            );
         }
         let _ = writeln!(&mut tw, "");
     }
@@ -56,7 +70,7 @@ fn build_cli() -> App<'static, 'static> {
                 .index(1)
                 .required(true)
                 .conflicts_with("completions")
-                .help("URL of consul agent to retrieve catalog from")
+                .help("URL of consul agent to retrieve catalog from"),
         )
         .arg(
             Arg::with_name("services")
@@ -67,9 +81,7 @@ fn build_cli() -> App<'static, 'static> {
                 .multiple(true)
                 .require_delimiter(true)
                 .number_of_values(1)
-                .help(
-                    "Filters service for specified service names"
-                )
+                .help("Filters service for specified service names"),
         )
         .arg(
             Arg::with_name("tags")
@@ -80,9 +92,7 @@ fn build_cli() -> App<'static, 'static> {
                 .multiple(true)
                 .require_delimiter(true)
                 .number_of_values(1)
-                .help(
-                    "Filters service for specified tags"
-                )
+                .help("Filters service for specified tags"),
         )
         .arg(
             Arg::with_name("completions")
@@ -90,7 +100,6 @@ fn build_cli() -> App<'static, 'static> {
                 .takes_value(true)
                 .hidden(true)
                 .possible_values(&["bash", "fish", "zsh"])
-                .help("The shell to generate the script for")
+                .help("The shell to generate the script for"),
         )
 }
-
