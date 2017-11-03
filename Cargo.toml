@@ -4,8 +4,8 @@ version = "0.0.0"
 authors = ["Lukas Pustina <lukas@pustina.net>"]
 
 [[bin]]
-name = "sw_inspect"
-path = "src/bin/sw_inspect.rs"
+name = "sw-discover"
+path = "src/bin/sw-discover.rs"
 doc = false
 
 [dependencies]
