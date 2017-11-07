@@ -24,6 +24,7 @@ name = "sw-discover"
 path = "src/bin/sw-discover.rs"
 
 [dependencies]
+ansi_term = "^0.9"
 clap = "2"
 consul = "^0.2"
 tabwriter = "^1.0"

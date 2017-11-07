@@ -1,7 +1,9 @@
+extern crate ansi_term;
 extern crate clap;
 extern crate consul;
 extern crate tabwriter;
 
+use ansi_term::Color;
 use clap::{App, Arg};
 use consul::Client;
 use tabwriter::TabWriter;
@@ -31,9 +33,9 @@ fn main() {
         let healthy_nodes = client.health.healthy_nodes_by_service(&service).unwrap();
         let _ = writeln!(
             &mut tw,
-            "Service '{}' tagged with {:?}",
-            service,
-            &services[service]
+            "Service '{}' tagged with {}",
+            Color::Yellow.paint(format!("{}", service)),
+            Color::Blue.paint(format!("{:?}", &services[service])),
         );
         for node in nodes {
             if let Some(ref s_tags) = tag_filter {
@@ -42,21 +44,23 @@ fn main() {
                     continue;
                 }
             }
-            let health_indicator = if healthy_nodes.contains(&node.Address) {
-                ":-)"
+
+            let (node_name, health_indicator) = if healthy_nodes.contains(&node.Address) {
+                (Color::Green.paint(format!("{}", node.Node)), ":-)")
             } else {
-                ":-("
+                (Color::Red.paint(format!("{}", node.Node)), ":-(")
             };
+
             let _ = writeln!(
                 &mut tw,
-                "\t* Node '{}' {} \tip:{},\tservice: id:{},\tname:{},\tport:{},\ttags:{:?}",
-                node.Node,
+                "\t* Node '{}' {} \tip:{},\tservice: id:{},\tname:{},\tport:{},\ttags:{}",
+                node_name,
                 health_indicator,
                 node.Address,
                 node.ServiceID,
                 node.ServiceName,
                 node.ServicePort,
-                node.ServiceTags
+                Color::Blue.paint(format!("{:?}", node.ServiceTags)),
             );
         }
         let _ = writeln!(&mut tw, "");
