@@ -53,12 +53,10 @@ fn main() {
 
             let _ = writeln!(
                 &mut tw,
-                "\t* Node '{}' {} \tip:{},\tservice: id:{},\tname:{},\tport:{},\ttags:{}",
+                "\t* Node '{}' {} \tip:{},\tport:{},\ttags:{}",
                 node_name,
                 health_indicator,
                 node.Address,
-                node.ServiceID,
-                node.ServiceName,
                 node.ServicePort,
                 Color::Blue.paint(format!("{:?}", node.ServiceTags)),
             );
