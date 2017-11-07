@@ -1,6 +1,6 @@
 [package]
 name = "service_world"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Lukas Pustina <lukas@pustina.net>"]
 description = "Discover services from Hasicorp's consul"
 repository = "https://github.com/lukaspustina/service_world.git"
