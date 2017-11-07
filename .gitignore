@@ -1,2 +1,4 @@
+.idea/
+service_world.iml
 /target/
 **/*.rs.bk
