@@ -28,6 +28,7 @@ fn main() {
             }
         }
         let nodes = client.catalog.get_nodes(service.clone()).unwrap();
+        let healthy_nodes = client.health.healthy_nodes_by_service(&service).unwrap();
         let _ = writeln!(
             &mut tw,
             "Service '{}' tagged with {:?}",
@@ -41,10 +42,16 @@ fn main() {
                     continue;
                 }
             }
+            let health_indicator = if healthy_nodes.contains(&node.Address) {
+                ":-)"
+            } else {
+                ":-("
+            };
             let _ = writeln!(
                 &mut tw,
-                "\t* Node '{}'\tip:{},\tservice: id:{},\tname:{},\tport:{},\ttags:{:?}",
+                "\t* Node '{}' {} \tip:{},\tservice: id:{},\tname:{},\tport:{},\ttags:{:?}",
                 node.Node,
+                health_indicator,
                 node.Address,
                 node.ServiceID,
                 node.ServiceName,
@@ -57,6 +64,17 @@ fn main() {
 
     let out_str = String::from_utf8(tw.into_inner().unwrap()).unwrap();
     print!("{}", out_str);
+
+    /*
+    let services = client.catalog.services().unwrap();
+    let service_names: Vec<_> = services.keys().collect();
+    for s in service_names {
+        let nodes = client.health.healthy_nodes_by_service(&s);
+        for n in nodes {
+            println!("{}: node={:?}", s, n);
+        }
+    }
+    */
 }
 
 fn build_cli() -> App<'static, 'static> {
