@@ -42,9 +42,9 @@
     <div class=".uk-child-width-expand uk-grid-small uk-grid-match" uk-grid>
         {{#each services}}
             <div>
-                <div id="service-{{this.name}}" class="uk-card uk-card-default uk-card-body">
-                    <div class="uk-card-badge uk-label">{{len this.nodes}}</div>
-                    <h3 class="uk-card-title uk-text-uppercase">{{this.name}}
+                <div id="service-{{this.name}}" class="uk-card-small uk-card-default uk-card-body">
+                    <h3 class="uk-card-title uk-text-uppercase">{{this.name}}&nbsp;
+                        <span class="uk-badge uk-text-small">{{len this.nodes}}</span>
                         {{#each this.tags}}
                             <span class="uk-label">{{this}}</span>
                         {{/each}}
@@ -60,7 +60,17 @@
                                         <span class="uk-label uk-label-danger" uk-icon="icon: close"></span>
                                     {{/if}}
                                 </td>
-                                <td><strong>{{this.name}}</strong></td>
+                                <td>
+                                    {{#if this.default_url}}
+                                        <strong><a href="{{this.default_url}}">{{this.name}}</a></strong>
+                                    {{else}}
+                                        <strong>{{this.name}}</strong>
+                                    {{/if}}
+                                    <br>
+                                    {{#each this.service_urls}}
+                                        [<a href="{{this}}" class="uk-text-lowercase">{{@key}}</a>]&nbsp;
+                                    {{/each}}
+                                </td>
                                 <td>{{this.address}}</td>
                                 <td>{{this.service_port}}</td>
                                 <td>

@@ -1,0 +1,34 @@
+[general]
+project_name = "CenterDevice Staging"
+
+[consul]
+urls = [
+  "http://consul-01.private.staging.staging.aws.internal.cnter.de:8500",
+  "http://consul-02.private.staging.staging.aws.internal.cnter.de:8500",
+  "http://consul-03.private.staging.staging.aws.internal.cnter.de:8500",
+]
+
+[[services.bosun]]
+name = "default"
+url = "https://{{ name }}:{{ service_port }}/"
+
+[[services.elasticsearch-9200]]
+name = "head plugin"
+url = "http://{{ name }}:{{ service_port }}/_plugin/head/"
+
+[[services.elasticsearch-9200]]
+name = "bigdesk plugin"
+url = "http://{{ name }}:{{ service_port }}/_plugin/bigdesk/"
+
+[[services.grafana]]
+name = "default"
+url = "https://{{ name }}:{{ service_port }}/"
+
+[[services.haproxy-monitor]]
+name = "default"
+url = "http://{{ name }}:{{ service_port }}/monitor"
+
+[[services.kibana]]
+name = "default"
+url = "https://{{ name }}:{{ service_port }}/"
+
