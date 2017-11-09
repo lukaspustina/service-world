@@ -3,6 +3,7 @@ extern crate ansi_term;
 extern crate error_chain;
 extern crate clap;
 extern crate service_world;
+extern crate serde_json;
 extern crate tabwriter;
 
 use ansi_term::Color;
@@ -14,7 +15,7 @@ use std::io::Write;
 fn run() -> Result<()> {
     let args = build_cli().get_matches();
 
-    let output = args.value_of("url").ok_or_else(|| {
+    let output = args.value_of("output module").ok_or_else(|| {
         ErrorKind::CliError("Output module not specified".to_string())
     })?;
     let url = args.value_of("url").ok_or_else(|| {
@@ -26,8 +27,10 @@ fn run() -> Result<()> {
         args.values_of_lossy("tags"),
     )?;
 
+    let mut writer = std::io::stdout();
     match output {
-        _ => terminal_output(&catalog)
+        "json" => json_output(&mut writer, &catalog),
+        _ => terminal_output(&mut writer, &catalog)
     }
 }
 
@@ -90,7 +93,7 @@ fn build_cli() -> App<'static, 'static> {
         )
 }
 
-fn terminal_output(catalog: &Catalog) -> Result<()> {
+fn terminal_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
     let mut tw = TabWriter::new(vec![]).padding(1);
     for service_name in catalog.services() {
         let _ =
@@ -128,9 +131,11 @@ fn terminal_output(catalog: &Catalog) -> Result<()> {
 
     let out_str = String::from_utf8(tw.into_inner().chain_err(|| ErrorKind::OutputError)?)
         .chain_err(|| ErrorKind::OutputError)?;
-    print!("{}", out_str);
+    write!(w, "{}", out_str).chain_err(|| ErrorKind::OutputError)
+}
 
-    Ok(())
+fn json_output(mut w: &mut Write, catalog: &Catalog) -> Result<()> {
+    serde_json::to_writer_pretty(&mut w, catalog).chain_err(|| ErrorKind::OutputError)
 }
 
 error_chain! {

@@ -1,11 +1,14 @@
 extern crate consul;
 #[macro_use]
 extern crate error_chain;
+#[macro_use]
+extern crate serde_derive;
 
 use consul::Client;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
+#[derive(Debug, Serialize)]
 pub struct Node {
     pub name: String,
     pub address: String,
@@ -13,6 +16,7 @@ pub struct Node {
     pub service_tags: Vec<String>,
 }
 
+#[derive(Debug, Serialize)]
 pub struct Catalog {
     services: HashMap<String, Vec<String>>,
     nodes_by_service: HashMap<String, Vec<Node>>,

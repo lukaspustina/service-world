@@ -332,6 +332,9 @@ dependencies = [
  "clap 2.27.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "consul 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "tabwriter 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
