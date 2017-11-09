@@ -14,7 +14,10 @@ use std::io::Write;
 fn run() -> Result<()> {
     let args = build_cli().get_matches();
 
-    let url: &str = args.value_of("url").ok_or_else(|| {
+    let output = args.value_of("url").ok_or_else(|| {
+        ErrorKind::CliError("Output module not specified".to_string())
+    })?;
+    let url = args.value_of("url").ok_or_else(|| {
         ErrorKind::CliError("Url not specified".to_string())
     })?;
     let consul = Consul::new(url.to_string());
@@ -23,9 +26,10 @@ fn run() -> Result<()> {
         args.values_of_lossy("tags"),
     )?;
 
-    output(&catalog)
+    match output {
+        _ => terminal_output(&catalog)
+    }
 }
-
 
 fn build_cli() -> App<'static, 'static> {
     let name = "sw-discover";
@@ -63,6 +67,20 @@ fn build_cli() -> App<'static, 'static> {
                 .help("Filters service for specified tags"),
         )
         .arg(
+            Arg::with_name("output module")
+                .long("output")
+                .short("o")
+                .takes_value(true)
+                .default_value("terminal")
+                .possible_values(
+                    &[
+                        "terminal",
+                        "json",
+                    ],
+                )
+                .help("Selects output module")
+        )
+        .arg(
             Arg::with_name("completions")
                 .long("completions")
                 .takes_value(true)
@@ -72,39 +90,39 @@ fn build_cli() -> App<'static, 'static> {
         )
 }
 
-fn output(catalog: &Catalog) -> Result<()> {
+fn terminal_output(catalog: &Catalog) -> Result<()> {
     let mut tw = TabWriter::new(vec![]).padding(1);
     for service_name in catalog.services() {
         let _ =
             writeln!(
-            &mut tw,
-            "Service '{}' tagged with {}",
-            Color::Yellow.paint(service_name.as_ref()),
-            Color::Blue.paint(format!("{:?}", catalog.service_tags(service_name))),
-        );
+                &mut tw,
+                "Service '{}' tagged with {}",
+                Color::Yellow.paint(service_name.as_ref()),
+                Color::Blue.paint(format!("{:?}", catalog.service_tags(service_name))),
+            );
 
         for node in catalog.nodes_by_service(service_name).ok_or_else(|| {
             ErrorKind::NoResults(format!("nodes for service {}", service_name))
         })?
-        {
-            let (node_name, health_indicator) =
-                if catalog.is_node_healthy_for_service(node, service_name) {
-                    (Color::Green.paint(node.name.as_ref()), ":-)")
-                } else {
-                    (Color::Red.paint(node.name.as_ref()), ":-(")
-                };
+            {
+                let (node_name, health_indicator) =
+                    if catalog.is_node_healthy_for_service(node, service_name) {
+                        (Color::Green.paint(node.name.as_ref()), ":-)")
+                    } else {
+                        (Color::Red.paint(node.name.as_ref()), ":-(")
+                    };
 
-            let _ =
-                writeln!(
-                &mut tw,
-                "\t* Node '{}' {} \tip:{},\tport:{},\ttags:{}",
-                node_name,
-                health_indicator,
-                node.address,
-                node.service_port,
-                Color::Blue.paint(format!("{:?}", node.service_tags)),
-            );
-        }
+                let _ =
+                    writeln!(
+                        &mut tw,
+                        "\t* Node '{}' {} \tip:{},\tport:{},\ttags:{}",
+                        node_name,
+                        health_indicator,
+                        node.address,
+                        node.service_port,
+                        Color::Blue.paint(format!("{:?}", node.service_tags)),
+                    );
+            }
         let _ = writeln!(&mut tw, "");
     }
 
