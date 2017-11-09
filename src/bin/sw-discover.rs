@@ -7,45 +7,64 @@ use ansi_term::Color;
 use clap::{App, Arg};
 use consul::Client;
 use tabwriter::TabWriter;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::io::Write;
+use std::iter::FromIterator;
 
 fn main() {
     let args = build_cli().get_matches();
 
     let url: &str = args.value_of("url").unwrap();
-    let service_filter: Option<Vec<_>> = args.values_of_lossy("services");
-    let tag_filter: Option<Vec<_>> = args.values_of_lossy("tags");
-
     let client = Client::new(url);
-    let mut tw = TabWriter::new(vec![]).padding(1);
 
-    let services = client.catalog.services().unwrap();
-    let mut service_names: Vec<_> = services.keys().collect();
-    service_names.sort();
-    for service in service_names {
-        if let Some(ref s_filter) = service_filter {
-            if !s_filter.contains(service) {
-                continue;
-            }
-        }
-        let nodes = client.catalog.get_nodes(service.clone()).unwrap();
-        let healthy_nodes = client.health.healthy_nodes_by_service(&service).unwrap();
+    let services: Vec<String> = args.values_of_lossy("services").unwrap_or_else(|| Vec::new());
+    let service_filter: Box<Fn(&String) -> bool> = if services.is_empty() {
+        Box::new(|_x| true)
+    } else {
+        Box::new(|x| services.contains(&x))
+    };
+
+    let tags: Vec<String> = args.values_of_lossy("tags").unwrap_or_else(|| Vec::new());
+    let tag_filter: Box<Fn(&String) -> bool> = if tags.is_empty() {
+        Box::new(|_x| true)
+    } else {
+        Box::new(|x| tags.contains(&x))
+    };
+
+    let services: HashMap<String, Vec<String>> = client.catalog.services()
+        .unwrap()
+        .into_iter()
+        .filter(|&(ref key, _)| service_filter(&key))
+        .filter(|&(_, ref values)| values.iter().any(|x| tag_filter(x)))
+        .collect();
+
+    let nodes_by_service: HashMap<&String, Vec<_>> = HashMap::from_iter(services
+        .keys()
+        .map(|service| {
+            (service, client.catalog.get_nodes(service.clone()).unwrap()
+                .into_iter()
+                .filter(|node| node.ServiceTags.iter().any(|x| tag_filter(x)))
+                .collect::<Vec<_>>()
+            )
+        }));
+
+    let healthy_nodes_by_service: HashMap<&String, Vec<_>> = HashMap::from_iter(services
+        .keys()
+        .map(|service| {
+            (service, client.health.healthy_nodes_by_service(service).unwrap())
+        }));
+
+    let mut tw = TabWriter::new(vec![]).padding(1);
+    for (name, tags) in &services {
         let _ = writeln!(
             &mut tw,
             "Service '{}' tagged with {}",
-            Color::Yellow.paint(format!("{}", service)),
-            Color::Blue.paint(format!("{:?}", &services[service])),
+            Color::Yellow.paint(format!("{}", name)),
+            Color::Blue.paint(format!("{:?}", tags)),
         );
-        for node in nodes {
-            if let Some(ref s_tags) = tag_filter {
-                let set: HashSet<_> = s_tags.iter().chain(node.ServiceTags.iter()).collect();
-                if set.len() == s_tags.len() + node.ServiceTags.len() {
-                    continue;
-                }
-            }
 
-            let (node_name, health_indicator) = if healthy_nodes.contains(&node.Address) {
+        for node in &nodes_by_service[name] {
+            let (node_name, health_indicator) = if healthy_nodes_by_service[name].contains(&node.Address) {
                 (Color::Green.paint(format!("{}", node.Node)), ":-)")
             } else {
                 (Color::Red.paint(format!("{}", node.Node)), ":-(")
@@ -67,16 +86,6 @@ fn main() {
     let out_str = String::from_utf8(tw.into_inner().unwrap()).unwrap();
     print!("{}", out_str);
 
-    /*
-    let services = client.catalog.services().unwrap();
-    let service_names: Vec<_> = services.keys().collect();
-    for s in service_names {
-        let nodes = client.health.healthy_nodes_by_service(&s);
-        for n in nodes {
-            println!("{}: node={:?}", s, n);
-        }
-    }
-    */
 }
 
 fn build_cli() -> App<'static, 'static> {
