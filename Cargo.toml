@@ -1,5 +1,5 @@
 [package]
-name = "service-world"
+name = "service_world"
 version = "0.0.3"
 authors = ["Lukas Pustina <lukas@pustina.net>"]
 description = "Discover services from Hasicorp's consul"
