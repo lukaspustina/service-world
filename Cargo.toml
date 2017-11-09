@@ -1,10 +1,10 @@
 [package]
-name = "service_world"
+name = "service-world"
 version = "0.0.2"
 authors = ["Lukas Pustina <lukas@pustina.net>"]
 description = "Discover services from Hasicorp's consul"
-repository = "https://github.com/lukaspustina/service_world.git"
-documentation = "https://github.com/lukaspustina/service_world.git"
+repository = "https://github.com/lukaspustina/service-world.git"
+documentation = "https://github.com/lukaspustina/service-world.git"
 readme = "README.md"
 license = "MIT"
 keywords = ["network", "consul", "service", "discovery"]
@@ -16,8 +16,8 @@ include = [
 ]
 
 [badges]
-travis-ci = { repository = "lukaspustina/service_world", branch = "master" }
-appveyor = { repository = "lukaspustina/service_world", branch = "master" }
+travis-ci = { repository = "lukaspustina/service-world", branch = "master" }
+appveyor = { repository = "lukaspustina/service-world", branch = "master" }
 
 [[bin]]
 name = "sw-discover"
@@ -32,3 +32,4 @@ serde = "^1.0"
 serde_derive = "^1.0"
 serde_json = "^1.0"
 tabwriter = "^1.0"
+
