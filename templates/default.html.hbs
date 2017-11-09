@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="description" content="Show services, nodes, and health status of registered Consul services">
+    <meta name="keywords" content="consul,services">
+    <meta name="author" content="Lukas Pustina">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ project_name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.34/css/uikit.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.34/js/uikit.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.34/js/uikit-icons.min.js"></script>
+    <style>
+        .mono {
+            font-family: Monospace;
+        }
+    </style>
+</head>
+<body>
+<div class="uk-container">
+    <h1 class="uk-heading-primary uk-heading-line"><span>{{ project_name }}</span></h1>
+
+    <h2 class="uk-heading-secondary">
+        <a href="#offcanvas-slide" class="uk-link-reset" uk-toggle>
+            <span uk-navbar-toggle-icon></span><span class="uk-margin-small-left">Services</span>
+        </a>
+    </h2>
+
+    <div id="offcanvas-slide" uk-offcanvas>
+        <div class="uk-offcanvas-bar">
+            <ul class="uk-nav uk-nav-default">
+                {{#each services}}
+                    <li><a href="#service-{{this.name}}" class="uk-text-uppercase">{{this.name}}&nbsp;({{len
+                            this.nodes}})</a></li>
+                {{/each}}
+            </ul>
+
+        </div>
+    </div>
+
+    <div class=".uk-child-width-expand uk-grid-small uk-grid-match" uk-grid>
+        {{#each services}}
+            <div>
+                <div id="service-{{this.name}}" class="uk-card uk-card-default uk-card-body">
+                    <div class="uk-card-badge uk-label">{{len this.nodes}}</div>
+                    <h3 class="uk-card-title uk-text-uppercase">{{this.name}}
+                        {{#each this.tags}}
+                            <span class="uk-label">{{this}}</span>
+                        {{/each}}
+                    </h3>
+                    <table class="uk-table uk-table-small">
+                        <tbody>
+                        {{#each this.nodes}}
+                            <tr>
+                                <td>
+                                    {{#if this.healthy }}
+                                        <span class="uk-label uk-label-success" uk-icon="icon: check"></span>
+                                    {{else}}
+                                        <span class="uk-label uk-label-danger" uk-icon="icon: close"></span>
+                                    {{/if}}
+                                </td>
+                                <td><strong>{{this.name}}</strong></td>
+                                <td>{{this.address}}</td>
+                                <td>{{this.service_port}}</td>
+                                <td>
+                                    {{#each this.service_tags}}
+                                        <span class="uk-label">{{this}}</span>
+                                    {{/each}}
+                                </td>
+                            </tr>
+                        {{/each}}
+                        </tbody>
+                    </table>
+                    <a class="uk-align-right" href="" uk-totop></a>
+                </div>
+
+            </div>
+        {{/each}}
+    </div>
+</div>
+</body>
+
+</html>

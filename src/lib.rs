@@ -18,7 +18,7 @@ pub struct Node {
 
 #[derive(Debug, Serialize)]
 pub struct Catalog {
-    services: HashMap<String, Vec<String>>,
+    pub services: HashMap<String, Vec<String>>,
     nodes_by_service: HashMap<String, Vec<Node>>,
     healthy_nodes_by_service: HashMap<String, Vec<String>>,
 }

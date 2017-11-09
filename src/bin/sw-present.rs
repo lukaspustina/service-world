@@ -7,8 +7,8 @@ extern crate serde_derive;
 extern crate service_world;
 
 use clap::{App, Arg};
-use handlebars::Handlebars;
-use service_world::{Consul, Catalog};
+use handlebars::{Handlebars, Helper, RenderContext, RenderError};
+use service_world::Consul;
 use std::io::Write;
 
 fn run() -> Result<()> {
@@ -25,19 +25,72 @@ fn run() -> Result<()> {
     let catalog = consul.catalog()?;
 
     let mut writer = std::io::stdout();
-    let context = Context { project_name: "Service World", catalog: &catalog };
-    render_template(template_file,&mut writer, &context)
+
+    let mut services: Vec<_> = catalog.services()
+        .iter()
+        .map(|name| {
+            let nodes = catalog.nodes_by_service(name).unwrap()
+                .into_iter()
+                .map(|node| {
+                    let healthy = catalog.is_node_healthy_for_service(node, name);
+                    Node {
+                        name: &node.name,
+                        address: &node.address,
+                        service_port: node.service_port,
+                        service_tags: &node.service_tags,
+                        healthy }
+                })
+                .collect();
+            let tags = catalog.service_tags(name).unwrap();
+            Service { name, tags, nodes }
+        })
+        .collect();
+    services.sort_by_key(|x| x.name);
+    let context = Context { project_name: "Service World", services };
+
+    render_template(template_file, &mut writer, &context)
 }
 
+fn handlebars_vec_len_formatter(h: &Helper, _: &Handlebars, rc: &mut RenderContext) -> ::std::result::Result<(), RenderError> {
+    let param = h.param(0).unwrap();
+    let vec_len = if let Some(v) = param.value().as_array() {
+        v.len()
+    } else {
+        0
+    };
+
+    let f = format!("{}", vec_len);
+    rc.writer.write_all(f.as_bytes())?;
+
+    Ok(())
+}
 
 #[derive(Serialize)]
 struct Context<'a> {
     project_name: &'a str,
-    catalog: &'a Catalog,
+    services: Vec<Service<'a>>
 }
+
+#[derive(Serialize)]
+struct Service<'a> {
+    name: &'a str,
+    tags: Vec<&'a String>,
+    nodes: Vec<Node<'a>>,
+}
+
+#[derive(Serialize)]
+struct Node<'a> {
+    name: &'a str,
+    address: &'a str,
+    service_port: u16,
+    service_tags: &'a Vec<String>,
+    healthy: bool,
+}
+
 
 fn render_template(template_file: &str, mut w: &mut Write, context: &Context) -> Result<()> {
     let mut handlebars = Handlebars::new();
+    handlebars.register_helper("len", Box::new(handlebars_vec_len_formatter));
 
     handlebars.register_template_file("service_overview", template_file).unwrap();
     handlebars.renderw("service_overview", context, &mut w).unwrap();
@@ -62,7 +115,7 @@ fn build_cli() -> App<'static, 'static> {
             Arg::with_name("template")
                 .long("template")
                 .takes_value(true)
-                .default_value("templates/default.hbs")
+                .default_value("templates/default.html.hbs")
                 .help("Sets template file for output"),
         )
         .arg(
