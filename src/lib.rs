@@ -57,13 +57,13 @@ impl Consul {
         let client = Client::new(&self.url);
 
         let service_filter: Box<Fn(&String) -> bool> = if let Some(services) = services {
-            Box::new(move |x| services.contains(&x))
+            Box::new(move |x| services.contains(x))
         } else {
             Box::new(|_x| true)
         };
 
         let tag_filter: Box<Fn(&String) -> bool> = if let Some(tags) = tags {
-            Box::new(move |x| tags.contains(&x))
+            Box::new(move |x| tags.contains(x))
         } else {
             Box::new(|_x| true)
         };
@@ -74,7 +74,7 @@ impl Consul {
             Err(cause) => bail!(ErrorKind::ConsulError(cause))
         }
             .into_iter()
-            .filter(|&(ref key, _)| service_filter(&key))
+            .filter(|&(ref key, _)| service_filter(key))
             .filter(|&(_, ref values)| values.iter().any(|x| tag_filter(x)))
             .collect();
 

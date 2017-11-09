@@ -17,7 +17,7 @@ fn run() -> Result<()> {
     let url: &str = args.value_of("url").ok_or_else(|| ErrorKind::CliError("Url not specified".to_string()))?;
     let consul = Consul::new(url.to_string());
     let catalog = consul.catalog_by(
-        args.values_of_lossy("services").into(),
+        args.values_of_lossy("services"),
         args.values_of_lossy("tags"),
     )?;
 
@@ -76,16 +76,16 @@ fn output(catalog: &Catalog) -> Result<()> {
         let _ = writeln!(
             &mut tw,
             "Service '{}' tagged with {}",
-            Color::Yellow.paint(format!("{}", service_name)),
+            Color::Yellow.paint(service_name.as_ref()),
             Color::Blue.paint(format!("{:?}", catalog.service_tags(service_name))),
         );
 
         for node in catalog.nodes_by_service(service_name)
             .ok_or_else(|| ErrorKind::NoResults(format!("nodes for service {}", service_name)))? {
             let (node_name, health_indicator) = if catalog.is_node_healthy_for_service(node, service_name) {
-                (Color::Green.paint(format!("{}", node.name)), ":-)")
+                (Color::Green.paint(node.name.as_ref()), ":-)")
             } else {
-                (Color::Red.paint(format!("{}", node.name)), ":-(")
+                (Color::Red.paint(node.name.as_ref()), ":-(")
             };
 
             let _ = writeln!(
