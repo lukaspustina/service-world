@@ -25,18 +25,22 @@ impl Catalog {
     }
 
     pub fn service_tags(&self, service_name: &str) -> Option<Vec<&String>> {
-        self.services.get(service_name)
-            .map(|x| x.iter().collect())
+        self.services.get(service_name).map(|x| x.iter().collect())
     }
 
     pub fn nodes_by_service(&self, service_name: &str) -> Option<Vec<&Node>> {
-        self.nodes_by_service.get(service_name)
-            .map(|x| x.iter().collect())
+        self.nodes_by_service.get(service_name).map(|x| {
+            x.iter().collect()
+        })
     }
 
     pub fn is_node_healthy_for_service(&self, node: &Node, service_name: &str) -> bool {
-        self.healthy_nodes_by_service.get(service_name)
-            .map_or(false, |x| x.contains(&node.address))
+        self.healthy_nodes_by_service.get(service_name).map_or(
+            false,
+            |x| {
+                x.contains(&node.address)
+            },
+        )
     }
 }
 
@@ -53,7 +57,11 @@ impl Consul {
         self.catalog_by(None, None)
     }
 
-    pub fn catalog_by(&self, services: Option<Vec<String>>, tags: Option<Vec<String>>) -> Result<Catalog> {
+    pub fn catalog_by(
+        &self,
+        services: Option<Vec<String>>,
+        tags: Option<Vec<String>>,
+    ) -> Result<Catalog> {
         let client = Client::new(&self.url);
 
         let service_filter: Box<Fn(&String) -> bool> = if let Some(services) = services {
@@ -71,45 +79,46 @@ impl Consul {
         // consul library isn't really friendly to chain error, because it return String as Error type
         let services: HashMap<String, Vec<String>> = match client.catalog.services() {
             Ok(x) => x,
-            Err(cause) => bail!(ErrorKind::ConsulError(cause))
-        }
-            .into_iter()
+            Err(cause) => bail!(ErrorKind::ConsulError(cause)),
+        }.into_iter()
             .filter(|&(ref key, _)| service_filter(key))
             .filter(|&(_, ref values)| values.iter().any(|x| tag_filter(x)))
             .collect();
 
-        let nodes_by_service: HashMap<String, Vec<_>> = HashMap::from_iter(services
-            .keys()
-            .map(|service| {
+        let nodes_by_service: HashMap<String, Vec<_>> =
+            HashMap::from_iter(services.keys().map(|service| {
                 (
                     service.to_string(),
-                    client.catalog.get_nodes(service.clone())
+                    client
+                        .catalog
+                        .get_nodes(service.clone())
                         .unwrap()
                         .into_iter()
                         .filter(|node| node.ServiceTags.iter().any(|x| tag_filter(x)))
-                        .map(|node| Node {
-                            name: node.Node,
-                            address: node.Address,
-                            service_port: node.ServicePort,
-                            service_tags: node.ServiceTags,
+                        .map(|node| {
+                            Node {
+                                name: node.Node,
+                                address: node.Address,
+                                service_port: node.ServicePort,
+                                service_tags: node.ServiceTags,
+                            }
                         })
-                        .collect::<Vec<_>>()
+                        .collect::<Vec<_>>(),
                 )
             }));
 
-        let healthy_nodes_by_service: HashMap<String, Vec<_>> = HashMap::from_iter(services
-            .keys()
-            .map(|service| {
+        let healthy_nodes_by_service: HashMap<String, Vec<_>> =
+            HashMap::from_iter(services.keys().map(|service| {
                 (
                     service.to_string(),
-                    client.health.healthy_nodes_by_service(service).unwrap()
+                    client.health.healthy_nodes_by_service(service).unwrap(),
                 )
             }));
 
         Ok(Catalog {
             services,
             nodes_by_service,
-            healthy_nodes_by_service
+            healthy_nodes_by_service,
         })
     }
 }

@@ -14,7 +14,9 @@ use std::io::Write;
 fn run() -> Result<()> {
     let args = build_cli().get_matches();
 
-    let url: &str = args.value_of("url").ok_or_else(|| ErrorKind::CliError("Url not specified".to_string()))?;
+    let url: &str = args.value_of("url").ok_or_else(|| {
+        ErrorKind::CliError("Url not specified".to_string())
+    })?;
     let consul = Consul::new(url.to_string());
     let catalog = consul.catalog_by(
         args.values_of_lossy("services"),
@@ -73,22 +75,27 @@ fn build_cli() -> App<'static, 'static> {
 fn output(catalog: &Catalog) -> Result<()> {
     let mut tw = TabWriter::new(vec![]).padding(1);
     for service_name in catalog.services() {
-        let _ = writeln!(
+        let _ =
+            writeln!(
             &mut tw,
             "Service '{}' tagged with {}",
             Color::Yellow.paint(service_name.as_ref()),
             Color::Blue.paint(format!("{:?}", catalog.service_tags(service_name))),
         );
 
-        for node in catalog.nodes_by_service(service_name)
-            .ok_or_else(|| ErrorKind::NoResults(format!("nodes for service {}", service_name)))? {
-            let (node_name, health_indicator) = if catalog.is_node_healthy_for_service(node, service_name) {
-                (Color::Green.paint(node.name.as_ref()), ":-)")
-            } else {
-                (Color::Red.paint(node.name.as_ref()), ":-(")
-            };
+        for node in catalog.nodes_by_service(service_name).ok_or_else(|| {
+            ErrorKind::NoResults(format!("nodes for service {}", service_name))
+        })?
+        {
+            let (node_name, health_indicator) =
+                if catalog.is_node_healthy_for_service(node, service_name) {
+                    (Color::Green.paint(node.name.as_ref()), ":-)")
+                } else {
+                    (Color::Red.paint(node.name.as_ref()), ":-(")
+                };
 
-            let _ = writeln!(
+            let _ =
+                writeln!(
                 &mut tw,
                 "\t* Node '{}' {} \tip:{},\tport:{},\ttags:{}",
                 node_name,
@@ -101,9 +108,8 @@ fn output(catalog: &Catalog) -> Result<()> {
         let _ = writeln!(&mut tw, "");
     }
 
-    let out_str = String::from_utf8(
-        tw.into_inner().chain_err(|| ErrorKind::OutputError)?
-    ).chain_err(|| ErrorKind::OutputError)?;
+    let out_str = String::from_utf8(tw.into_inner().chain_err(|| ErrorKind::OutputError)?)
+        .chain_err(|| ErrorKind::OutputError)?;
     print!("{}", out_str);
 
     Ok(())
