@@ -27,5 +27,6 @@ path = "src/bin/sw-discover.rs"
 ansi_term = "^0.9"
 clap = "2"
 consul = "^0.2"
+error-chain = "^0.11"
 tabwriter = "^1.0"
 

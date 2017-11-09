@@ -1,4 +1,6 @@
 extern crate consul;
+#[macro_use]
+extern crate error_chain;
 
 use consul::Client;
 use std::collections::HashMap;
@@ -24,12 +26,12 @@ impl Catalog {
 
     pub fn service_tags(&self, service_name: &str) -> Option<Vec<&String>> {
         self.services.get(service_name)
-            .map(|x| x.iter().collect() )
+            .map(|x| x.iter().collect())
     }
 
     pub fn nodes_by_service(&self, service_name: &str) -> Option<Vec<&Node>> {
         self.nodes_by_service.get(service_name)
-            .map(|x| x.iter().collect() )
+            .map(|x| x.iter().collect())
     }
 
     pub fn is_node_healthy_for_service(&self, node: &Node, service_name: &str) -> bool {
@@ -47,11 +49,11 @@ impl Consul {
         Consul { url }
     }
 
-    pub fn catalog(&self) -> Option<Catalog> {
+    pub fn catalog(&self) -> Result<Catalog> {
         self.catalog_by(None, None)
     }
 
-    pub fn catalog_by(&self, services: Option<Vec<String>>, tags: Option<Vec<String>>) -> Option<Catalog> {
+    pub fn catalog_by(&self, services: Option<Vec<String>>, tags: Option<Vec<String>>) -> Result<Catalog> {
         let client = Client::new(&self.url);
 
         let service_filter: Box<Fn(&String) -> bool> = if let Some(services) = services {
@@ -66,8 +68,11 @@ impl Consul {
             Box::new(|_x| true)
         };
 
-        let services: HashMap<String, Vec<String>> = client.catalog.services()
-            .unwrap()
+        // consul library isn't really friendly to chain error, because it return String as Error type
+        let services: HashMap<String, Vec<String>> = match client.catalog.services() {
+            Ok(x) => x,
+            Err(cause) => bail!(ErrorKind::ConsulError(cause))
+        }
             .into_iter()
             .filter(|&(ref key, _)| service_filter(&key))
             .filter(|&(_, ref values)| values.iter().any(|x| tag_filter(x)))
@@ -78,7 +83,8 @@ impl Consul {
             .map(|service| {
                 (
                     service.to_string(),
-                    client.catalog.get_nodes(service.clone()).unwrap()
+                    client.catalog.get_nodes(service.clone())
+                        .unwrap()
                         .into_iter()
                         .filter(|node| node.ServiceTags.iter().any(|x| tag_filter(x)))
                         .map(|node| Node {
@@ -100,10 +106,19 @@ impl Consul {
                 )
             }));
 
-        Some(Catalog {
+        Ok(Catalog {
             services,
             nodes_by_service,
             healthy_nodes_by_service
         })
+    }
+}
+
+error_chain! {
+    errors {
+        ConsulError(cause: String) {
+            description("Failed get data from Consul")
+            display("Failed get data from Consul because {}", cause)
+        }
     }
 }
