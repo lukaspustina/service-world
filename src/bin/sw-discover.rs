@@ -1,73 +1,37 @@
 extern crate ansi_term;
 extern crate clap;
-extern crate consul;
+extern crate service_world;
 extern crate tabwriter;
 
 use ansi_term::Color;
 use clap::{App, Arg};
-use consul::Client;
 use tabwriter::TabWriter;
-use std::collections::HashMap;
 use std::io::Write;
-use std::iter::FromIterator;
 
 fn main() {
     let args = build_cli().get_matches();
 
     let url: &str = args.value_of("url").unwrap();
-    let client = Client::new(url);
-
-    let services: Vec<String> = args.values_of_lossy("services").unwrap_or_else(|| Vec::new());
-    let service_filter: Box<Fn(&String) -> bool> = if services.is_empty() {
-        Box::new(|_x| true)
-    } else {
-        Box::new(|x| services.contains(&x))
-    };
-
-    let tags: Vec<String> = args.values_of_lossy("tags").unwrap_or_else(|| Vec::new());
-    let tag_filter: Box<Fn(&String) -> bool> = if tags.is_empty() {
-        Box::new(|_x| true)
-    } else {
-        Box::new(|x| tags.contains(&x))
-    };
-
-    let services: HashMap<String, Vec<String>> = client.catalog.services()
-        .unwrap()
-        .into_iter()
-        .filter(|&(ref key, _)| service_filter(&key))
-        .filter(|&(_, ref values)| values.iter().any(|x| tag_filter(x)))
-        .collect();
-
-    let nodes_by_service: HashMap<&String, Vec<_>> = HashMap::from_iter(services
-        .keys()
-        .map(|service| {
-            (service, client.catalog.get_nodes(service.clone()).unwrap()
-                .into_iter()
-                .filter(|node| node.ServiceTags.iter().any(|x| tag_filter(x)))
-                .collect::<Vec<_>>()
-            )
-        }));
-
-    let healthy_nodes_by_service: HashMap<&String, Vec<_>> = HashMap::from_iter(services
-        .keys()
-        .map(|service| {
-            (service, client.health.healthy_nodes_by_service(service).unwrap())
-        }));
+    let consul = service_world::Consul::new(url.to_string());
+    let catalog = consul.catalog_by(
+        args.values_of_lossy("services").into(),
+        args.values_of_lossy("tags"),
+    ).unwrap();
 
     let mut tw = TabWriter::new(vec![]).padding(1);
-    for (name, tags) in &services {
+    for service_name in catalog.services() {
         let _ = writeln!(
             &mut tw,
             "Service '{}' tagged with {}",
-            Color::Yellow.paint(format!("{}", name)),
-            Color::Blue.paint(format!("{:?}", tags)),
+            Color::Yellow.paint(format!("{}", service_name)),
+            Color::Blue.paint(format!("{:?}", catalog.service_tags(service_name))),
         );
 
-        for node in &nodes_by_service[name] {
-            let (node_name, health_indicator) = if healthy_nodes_by_service[name].contains(&node.Address) {
-                (Color::Green.paint(format!("{}", node.Node)), ":-)")
+        for node in catalog.nodes_by_service(service_name).unwrap() {
+            let (node_name, health_indicator) = if catalog.is_node_healthy_for_service(node, service_name) {
+                (Color::Green.paint(format!("{}", node.name)), ":-)")
             } else {
-                (Color::Red.paint(format!("{}", node.Node)), ":-(")
+                (Color::Red.paint(format!("{}", node.name)), ":-(")
             };
 
             let _ = writeln!(
@@ -75,9 +39,9 @@ fn main() {
                 "\t* Node '{}' {} \tip:{},\tport:{},\ttags:{}",
                 node_name,
                 health_indicator,
-                node.Address,
-                node.ServicePort,
-                Color::Blue.paint(format!("{:?}", node.ServiceTags)),
+                node.address,
+                node.service_port,
+                Color::Blue.paint(format!("{:?}", node.service_tags)),
             );
         }
         let _ = writeln!(&mut tw, "");
@@ -85,7 +49,6 @@ fn main() {
 
     let out_str = String::from_utf8(tw.into_inner().unwrap()).unwrap();
     print!("{}", out_str);
-
 }
 
 fn build_cli() -> App<'static, 'static> {
