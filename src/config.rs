@@ -40,7 +40,12 @@ impl Default for Config {
         let present = Present { templates: HashMap::new() };
         let services = HashMap::new();
 
-        Config { general, consul, present, services }
+        Config {
+            general,
+            consul,
+            present,
+            services,
+        }
     }
 }
 

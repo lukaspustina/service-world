@@ -30,7 +30,7 @@ fn run() -> Result<()> {
     let mut writer = std::io::stdout();
     match output {
         "json" => json_output(&mut writer, &catalog),
-        _ => terminal_output(&mut writer, &catalog)
+        _ => terminal_output(&mut writer, &catalog),
     }
 }
 
@@ -75,13 +75,8 @@ fn build_cli() -> App<'static, 'static> {
                 .short("o")
                 .takes_value(true)
                 .default_value("terminal")
-                .possible_values(
-                    &[
-                        "terminal",
-                        "json",
-                    ],
-                )
-                .help("Selects output module")
+                .possible_values(&["terminal", "json"])
+                .help("Selects output module"),
         )
         .arg(
             Arg::with_name("completions")
@@ -107,16 +102,16 @@ fn terminal_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
         for node in catalog.nodes_by_service(service_name).ok_or_else(|| {
             ErrorKind::NoResults(format!("nodes for service {}", service_name))
         })?
-            {
-                let (node_name, health_indicator) =
-                    if catalog.is_node_healthy_for_service(node, service_name) {
-                        (Color::Green.paint(node.name.as_ref()), ":-)")
-                    } else {
-                        (Color::Red.paint(node.name.as_ref()), ":-(")
-                    };
+        {
+            let (node_name, health_indicator) =
+                if catalog.is_node_healthy_for_service(node, service_name) {
+                    (Color::Green.paint(node.name.as_ref()), ":-)")
+                } else {
+                    (Color::Red.paint(node.name.as_ref()), ":-(")
+                };
 
-                let _ =
-                    writeln!(
+            let _ =
+                writeln!(
                         &mut tw,
                         "\t* Node '{}' {} \tip:{},\tport:{},\ttags:{}",
                         node_name,
@@ -125,7 +120,7 @@ fn terminal_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
                         node.service_port,
                         Color::Blue.paint(format!("{:?}", node.service_tags)),
                     );
-            }
+        }
         let _ = writeln!(&mut tw, "");
     }
 

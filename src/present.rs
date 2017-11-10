@@ -7,7 +7,7 @@ use std::io::Write;
 #[derive(Serialize)]
 pub struct Services<'a> {
     pub project_name: &'a str,
-    pub services: Vec<Service<'a>>
+    pub services: Vec<Service<'a>>,
 }
 
 #[derive(Serialize)]
@@ -30,7 +30,8 @@ pub struct Node<'a> {
 
 impl<'a> Services<'a> {
     pub fn from_catalog(catalog: &'a Catalog, config: &'a Config) -> Result<Services<'a>> {
-        let mut services: Vec<_> = catalog.services()
+        let mut services: Vec<_> = catalog
+            .services()
             .iter()
             .map(|name| {
                 let nodes = if let Some(nodes) = catalog.nodes_by_service(name) {
@@ -64,9 +65,10 @@ impl<'a> Services<'a> {
             .collect();
         services.sort_by_key(|x| x.name);
 
-        Ok(
-            Services { project_name: &config.general.project_name, services }
-        )
+        Ok(Services {
+            project_name: &config.general.project_name,
+            services,
+        })
     }
 
 
@@ -75,9 +77,11 @@ impl<'a> Services<'a> {
         handlebars.register_helper("len", Box::new(handlebars_helper::vec_len_formatter));
 
         let template_name = "service_overview";
-        handlebars.register_template_file(template_name, template_file)
+        handlebars
+            .register_template_file(template_name, template_file)
             .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
-        handlebars.renderw("service_overview", self, &mut w)
+        handlebars
+            .renderw("service_overview", self, &mut w)
             .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
 
         Ok(())
@@ -87,7 +91,11 @@ impl<'a> Services<'a> {
 mod handlebars_helper {
     use handlebars::{Handlebars, Helper, RenderContext, RenderError};
 
-    pub fn vec_len_formatter(h: &Helper, _: &Handlebars, rc: &mut RenderContext) -> ::std::result::Result<(), RenderError> {
+    pub fn vec_len_formatter(
+        h: &Helper,
+        _: &Handlebars,
+        rc: &mut RenderContext,
+    ) -> ::std::result::Result<(), RenderError> {
         let vec_len = if let Some(param) = h.param(0) {
             if let Some(v) = param.value().as_array() {
                 v.len()
@@ -105,17 +113,23 @@ mod handlebars_helper {
     }
 }
 
-fn generate_service_ulrs(config: &Config, service_name: &str, node: &consul::Node) -> Result<HashMap<String, String>> {
+fn generate_service_ulrs(
+    config: &Config,
+    service_name: &str,
+    node: &consul::Node,
+) -> Result<HashMap<String, String>> {
     let mut m = HashMap::new();
     if let Some(services) = config.services.get(service_name) {
         let mut handlebars = Handlebars::new();
 
         for service in services {
             let template_name = format!("service_url-{}", service.name);
-            handlebars.register_template_string(&template_name, &service.url)
+            handlebars
+                .register_template_string(&template_name, &service.url)
                 .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
-            let rendered_url = handlebars.render(&template_name, node)
-                .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
+            let rendered_url = handlebars.render(&template_name, node).chain_err(|| {
+                ErrorKind::TemplateError(template_name.to_string())
+            })?;
             m.insert(service.name.to_string(), rendered_url);
         }
     }

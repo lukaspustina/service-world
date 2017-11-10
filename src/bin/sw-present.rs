@@ -42,9 +42,9 @@ fn run() -> Result<()> {
 
     let mut writer = std::io::stdout();
 
-    services
-        .render(template_file, &mut writer)
-        .map_err(|e| e.into())
+    services.render(template_file, &mut writer).map_err(
+        |e| e.into(),
+    )
 }
 
 fn build_cli() -> App<'static, 'static> {
