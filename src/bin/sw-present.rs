@@ -26,6 +26,7 @@ mod config {
     pub struct Config {
         pub general: General,
         pub consul: Consul,
+        pub present: Present,
         pub services: HashMap<String, Vec<Service>>,
     }
 
@@ -40,6 +41,11 @@ mod config {
     }
 
     #[derive(Debug, Deserialize, Serialize)]
+    pub struct Present {
+        pub templates: HashMap<String, String>,
+    }
+
+    #[derive(Debug, Deserialize, Serialize)]
     pub struct Service {
         pub name: String,
         pub url: String,
@@ -49,9 +55,10 @@ mod config {
         fn default() -> Config {
             let general = General { project_name: "Service World".to_string() };
             let consul = Consul { urls: vec!["http://localhost:8500".to_string()] };
+            let present = Present { templates: HashMap::new() };
             let services = HashMap::new();
 
-            Config { general, consul, services }
+            Config { general, consul, present, services }
         }
     }
 
@@ -90,17 +97,22 @@ fn run() -> Result<()> {
 
     let args = build_cli().get_matches();
 
-    let url = args.value_of("url").ok_or_else(|| {
-        ErrorKind::CliError("Url not specified".to_string())
-    })?;
-    let template_file = args.value_of("template").ok_or_else(|| {
-        ErrorKind::CliError("Template not specified".to_string())
-    })?;
     let config = if let Some(config_file) = args.value_of("config") {
         Config::from_file(Path::new(config_file))
     } else {
         Ok(Default::default())
     }.unwrap();
+
+    // Consul Client should take all URLs and decides which to use by itself.
+    let url: &str = args.value_of("url")
+        .or(
+            // This is Rust at its not so finest: There's no coercing from Option<&String> to Option<&str>,
+            // so we have to reborrow.
+            config.consul.urls.get(0).map(|x| &**x)
+        )
+        .ok_or_else(||
+            ErrorKind::CliError("Url is neither specified as CLI parameter nor in configuration file".to_string())
+        )?;
 
     let consul = Consul::new(url.to_string());
     let catalog = consul.catalog()?;
@@ -138,7 +150,7 @@ fn run() -> Result<()> {
     services.sort_by_key(|x| x.name);
     let context = Context { project_name: &config.general.project_name, services };
 
-    render_template(template_file, &mut writer, &context)
+    render_template(config.present.templates.get("services").unwrap(), &mut writer, &context)
 }
 
 fn handlebars_vec_len_formatter(h: &Helper, _: &Handlebars, rc: &mut RenderContext) -> ::std::result::Result<(), RenderError> {
@@ -193,7 +205,7 @@ fn generate_service_ulrs(config: &config::Config, service_name: &str, node: &ser
 
         Some(m)
     } else {
-       None
+        None
     }
 }
 
@@ -214,25 +226,12 @@ fn build_cli() -> App<'static, 'static> {
     App::new(name)
         .version(version)
         .arg(
-            Arg::with_name("url")
-                .index(1)
-                .required(true)
-                .conflicts_with("completions")
-                .help("URL of consul agent to retrieve catalog from"),
-        )
-        .arg(
             Arg::with_name("config")
                 .short("c")
                 .long("config")
+                .required(true)
                 .takes_value(true)
-                .help("Reads config file"),
-        )
-        .arg(
-            Arg::with_name("template")
-                .long("template")
-                .takes_value(true)
-                .default_value("examples/templates/services.html.hbs")
-                .help("Sets template file for output"),
+                .help("Sets config file"),
         )
         .arg(
             Arg::with_name("completions")
