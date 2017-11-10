@@ -38,7 +38,7 @@ impl<'a> Services<'a> {
                         .into_iter()
                         .map(|node| {
                             let healthy = catalog.is_node_healthy_for_service(node, name);
-                            let mut service_urls = generate_service_ulrs(&config, name, node).ok();
+                            let mut service_urls = generate_service_ulrs(config, name, node).ok();
                             let default_url = if let Some(ref mut s_urls) = service_urls {
                                 s_urls.remove("default")
                             } else {
@@ -58,7 +58,7 @@ impl<'a> Services<'a> {
                 } else {
                     Vec::new()
                 };
-                let tags = catalog.service_tags(name).unwrap_or_else(|| Vec::new());
+                let tags = catalog.service_tags(name).unwrap_or_else(Vec::new);
                 Service { name, tags, nodes }
             })
             .collect();

@@ -26,7 +26,7 @@ fn run() -> Result<()> {
 
     // Consul Client should take all URLs and decides which to use by itself.
     let url: &str = args.value_of("url")
-        .or(
+        .or_else( ||
             // This is Rust at its not so finest: There's no coercing from Option<&String> to Option<&str>,
             // so we have to reborrow.
             config.consul.urls.get(0).map(|x| &**x)
