@@ -231,7 +231,7 @@ fn build_cli() -> App<'static, 'static> {
             Arg::with_name("template")
                 .long("template")
                 .takes_value(true)
-                .default_value("templates/default.html.hbs")
+                .default_value("examples/templates/services.html.hbs")
                 .help("Sets template file for output"),
         )
         .arg(
