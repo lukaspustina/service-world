@@ -9,7 +9,7 @@ extern crate tabwriter;
 use ansi_term::Color;
 use clap::{App, Arg};
 use tabwriter::TabWriter;
-use service_world::{Consul, Catalog};
+use service_world::consul::{Consul, Catalog};
 use std::io::Write;
 
 fn run() -> Result<()> {
@@ -157,7 +157,7 @@ error_chain! {
     }
 
     links {
-        ServiceWorld(service_world::Error, service_world::ErrorKind);
+        Consul(service_world::consul::Error, service_world::consul::ErrorKind);
     }
 }
 
