@@ -20,6 +20,10 @@ fn run() -> Result<()> {
         Ok(Default::default())
     }.unwrap();
 
+    let template_file = config.present.templates.get("services").ok_or_else(|| {
+        ErrorKind::CliError("Services template file not specified".to_string())
+    })?;
+
     // Consul Client should take all URLs and decides which to use by itself.
     let url: &str = args.value_of("url")
         .or(
@@ -34,12 +38,12 @@ fn run() -> Result<()> {
     let consul = Consul::new(url.to_string());
     let catalog = consul.catalog()?;
 
-    let services = Services::from_catalog(&catalog, &config);
+    let services = Services::from_catalog(&catalog, &config)?;
 
     let mut writer = std::io::stdout();
 
     services
-        .render(config.present.templates.get("services").unwrap(), &mut writer)
+        .render(template_file, &mut writer)
         .map_err(|e| e.into())
 }
 

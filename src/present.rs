@@ -29,38 +29,44 @@ pub struct Node<'a> {
 }
 
 impl<'a> Services<'a> {
-    pub fn from_catalog(catalog: &'a Catalog, config: &'a Config) -> Services<'a> {
+    pub fn from_catalog(catalog: &'a Catalog, config: &'a Config) -> Result<Services<'a>> {
         let mut services: Vec<_> = catalog.services()
             .iter()
             .map(|name| {
-                let nodes = catalog.nodes_by_service(name).unwrap()
-                    .into_iter()
-                    .map(|node| {
-                        let healthy = catalog.is_node_healthy_for_service(node, name);
-                        let mut service_urls = generate_service_ulrs(&config, name, node);
-                        let default_url = if let Some(ref mut s_urls) = service_urls {
-                            s_urls.remove("default")
-                        } else {
-                            None
-                        };
-                        Node {
-                            name: &node.name,
-                            address: &node.address,
-                            service_port: node.service_port,
-                            service_tags: &node.service_tags,
-                            healthy,
-                            service_urls,
-                            default_url,
-                        }
-                    })
-                    .collect();
-                let tags = catalog.service_tags(name).unwrap();
+                let nodes = if let Some(nodes) = catalog.nodes_by_service(name) {
+                    nodes
+                        .into_iter()
+                        .map(|node| {
+                            let healthy = catalog.is_node_healthy_for_service(node, name);
+                            let mut service_urls = generate_service_ulrs(&config, name, node).ok();
+                            let default_url = if let Some(ref mut s_urls) = service_urls {
+                                s_urls.remove("default")
+                            } else {
+                                None
+                            };
+                            Node {
+                                name: &node.name,
+                                address: &node.address,
+                                service_port: node.service_port,
+                                service_tags: &node.service_tags,
+                                healthy,
+                                service_urls,
+                                default_url,
+                            }
+                        })
+                        .collect()
+                } else {
+                    Vec::new()
+                };
+                let tags = catalog.service_tags(name).unwrap_or_else(|| Vec::new());
                 Service { name, tags, nodes }
             })
             .collect();
         services.sort_by_key(|x| x.name);
 
-        Services { project_name: &config.general.project_name, services }
+        Ok(
+            Services { project_name: &config.general.project_name, services }
+        )
     }
 
 
@@ -71,7 +77,7 @@ impl<'a> Services<'a> {
         let template_name = "service_overview";
         handlebars.register_template_file(template_name, template_file)
             .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
-        handlebars.renderw("service_overview",self, &mut w)
+        handlebars.renderw("service_overview", self, &mut w)
             .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
 
         Ok(())
@@ -82,9 +88,12 @@ mod handlebars_helper {
     use handlebars::{Handlebars, Helper, RenderContext, RenderError};
 
     pub fn vec_len_formatter(h: &Helper, _: &Handlebars, rc: &mut RenderContext) -> ::std::result::Result<(), RenderError> {
-        let param = h.param(0).unwrap();
-        let vec_len = if let Some(v) = param.value().as_array() {
-            v.len()
+        let vec_len = if let Some(param) = h.param(0) {
+            if let Some(v) = param.value().as_array() {
+                v.len()
+            } else {
+                0
+            }
         } else {
             0
         };
@@ -96,22 +105,21 @@ mod handlebars_helper {
     }
 }
 
-fn generate_service_ulrs(config: &Config, service_name: &str, node: &consul::Node) -> Option<HashMap<String, String>> {
+fn generate_service_ulrs(config: &Config, service_name: &str, node: &consul::Node) -> Result<HashMap<String, String>> {
+    let mut m = HashMap::new();
     if let Some(services) = config.services.get(service_name) {
-        let mut m = HashMap::new();
         let mut handlebars = Handlebars::new();
 
         for service in services {
             let template_name = format!("service_url-{}", service.name);
-            handlebars.register_template_string(&template_name, &service.url).unwrap();
-            let rendered_url = handlebars.render(&template_name, node).unwrap();
+            handlebars.register_template_string(&template_name, &service.url)
+                .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
+            let rendered_url = handlebars.render(&template_name, node)
+                .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
             m.insert(service.name.to_string(), rendered_url);
         }
-
-        Some(m)
-    } else {
-        None
     }
+    Ok(m)
 }
 
 error_chain! {

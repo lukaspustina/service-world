@@ -109,7 +109,9 @@ impl Consul {
             HashMap::from_iter(services.keys().map(|service| {
                 (
                     service.to_string(),
-                    client.health.healthy_nodes_by_service(service).unwrap(),
+                    client.health
+                        .healthy_nodes_by_service(service)
+                        .unwrap_or_else(|_| Vec::new())
                 )
             }));
 
