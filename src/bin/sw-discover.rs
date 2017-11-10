@@ -96,7 +96,10 @@ fn terminal_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
                 &mut tw,
                 "Service '{}' tagged with {}",
                 Color::Yellow.paint(service_name.as_ref()),
-                Color::Blue.paint(format!("{:?}", catalog.service_tags(service_name))),
+                Color::Blue.paint(format!("{:?}",
+                                          catalog.service_tags(service_name)
+                                              .unwrap_or_else(Vec::new))
+                )
             );
 
         for node in catalog.nodes_by_service(service_name).ok_or_else(|| {
