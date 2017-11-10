@@ -53,14 +53,14 @@
                         <tbody>
                         {{#each this.nodes}}
                             <tr>
-                                <td>
+                                <td class="uk-table-shrink">
                                     {{#if this.healthy }}
                                         <span class="uk-label uk-label-success" uk-icon="icon: check"></span>
                                     {{else}}
                                         <span class="uk-label uk-label-danger" uk-icon="icon: close"></span>
                                     {{/if}}
                                 </td>
-                                <td>
+                                <td class="uk-table-expand">
                                     {{#if this.default_url}}
                                         <strong><a href="{{this.default_url}}">{{this.name}}</a></strong>
                                     {{else}}
@@ -71,8 +71,8 @@
                                         [<a href="{{this}}" class="uk-text-lowercase">{{@key}}</a>]&nbsp;
                                     {{/each}}
                                 </td>
-                                <td>{{this.address}}</td>
-                                <td>{{this.service_port}}</td>
+                                <td class="uk-table-shrink">{{this.address}}</td>
+                                <td class="uk-table-shrink">{{this.service_port}}</td>
                                 <td>
                                     {{#each this.service_tags}}
                                         <span class="uk-label">{{this}}</span>
