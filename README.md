@@ -1,4 +1,9 @@
 # Service World
 
-Discover services from Hasicorp's Consul
+Discover services from Hashicorp's Consul.
+
+## Todo
+
+* Show node metadata
+* Create web server with Rocket
 
