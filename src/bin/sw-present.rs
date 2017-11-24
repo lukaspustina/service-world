@@ -20,13 +20,9 @@ fn run() -> Result<()> {
         Ok(Default::default())
     }.unwrap();
 
-    let template_file = config.present.templates.get("services").ok_or_else(|| {
-        ErrorKind::CliError("Services template file not specified".to_string())
-    })?;
-
     // TODO: Consul Client should take all URLs and decides which to use by itself.
     let url: &str = args.value_of("url")
-        .or_else( ||
+        .or_else(||
             // This is Rust at its not so finest: There's no coercing from Option<&String> to Option<&str>,
             // so we have to reborrow.
             config.consul.urls.get(0).map(|x| &**x)
@@ -34,8 +30,24 @@ fn run() -> Result<()> {
         .ok_or_else(||
             ErrorKind::CliError("Url is neither specified as CLI parameter nor in configuration file".to_string())
         )?;
-
     let consul = Consul::new(url.to_string());
+
+    if args.is_present("rocket") {
+        launch_rocket(&config,&consul)
+    } else {
+        gen_services_html(&config, &consul)
+    }
+}
+
+fn launch_rocket(config: &Config, consul: &Consul) -> Result<()> {
+    Ok(())
+}
+
+fn gen_services_html(config: &Config, consul: &Consul) -> Result<()> {
+    let template_file = config.present.templates.get("services").ok_or_else(|| {
+        ErrorKind::CliError("Services template file not specified".to_string())
+    })?;
+
     let catalog = consul.catalog()?;
 
     let services = Services::from_catalog(&catalog, &config)?;
@@ -54,12 +66,26 @@ fn build_cli() -> App<'static, 'static> {
     App::new(name)
         .version(version)
         .arg(
+            Arg::with_name("url")
+                .index(1)
+                .conflicts_with("completions")
+                .help("URL of consul agent to retrieve catalog from"),
+        )
+        .arg(
             Arg::with_name("config")
                 .short("c")
                 .long("config")
                 .required(true)
                 .takes_value(true)
+                .conflicts_with("completions")
                 .help("Sets config file"),
+        )
+        .arg(
+            Arg::with_name("rocket")
+                .short("r")
+                .long("rocket")
+                .conflicts_with("completions")
+                .help("Sets Rocket mode -- activates internal web server"),
         )
         .arg(
             Arg::with_name("completions")
