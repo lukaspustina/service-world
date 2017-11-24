@@ -24,7 +24,7 @@ fn run() -> Result<()> {
         ErrorKind::CliError("Services template file not specified".to_string())
     })?;
 
-    // Consul Client should take all URLs and decides which to use by itself.
+    // TODO: Consul Client should take all URLs and decides which to use by itself.
     let url: &str = args.value_of("url")
         .or_else( ||
             // This is Rust at its not so finest: There's no coercing from Option<&String> to Option<&str>,
