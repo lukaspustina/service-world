@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="description" content="Show services, nodes, and health status of registered Consul services">
+    <meta name="keywords" content="consul,services">
+    <meta name="author" content="Lukas Pustina">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ project_name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.34/css/uikit.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.34/js/uikit.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.34/js/uikit-icons.min.js"></script>
+    <script src="https://use.fontawesome.com/8236a27b7d.js"></script>
+    <style>
+        .mono {
+            font-family: Monospace;
+        }
+    </style>
+</head>
+<body>
+<div class="uk-container">
+    <h1 class="uk-heading-primary uk-heading-line"><span>{{ general.project_name }}</span></h1>
+
+    <h2 class="uk-heading-secondary">
+        Main Services
+    </h2>
+
+    <div class=".uk-child-width-expand uk-grid-small uk-grid-match" uk-grid>
+        <div>
+            <div class="uk-card-small uk-card-default uk-card-body uk-text-large">
+                <p>
+                    {{#each present.index_links}}
+                        {{#if this.icon}}
+                            <i class="fa {{this.icon}}" aria-hidden="true"></i>
+                        {{/if}}
+                        <a href="{{this.url}}" class="uk-text-uppercase">{{this.name}}</a><br/>
+                    {{/each}}
+                </p>
+                <p>
+                    <strong><a href="/services" class="uk-text-small">Service Overview</a></strong><br/>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+</html>

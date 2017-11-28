@@ -71,7 +71,6 @@ impl<'a> Services<'a> {
         })
     }
 
-
     pub fn render(&self, template_file: &str, mut w: &mut Write) -> Result<()> {
         let mut handlebars = Handlebars::new();
         handlebars.register_helper("len", Box::new(handlebars_helper::vec_len_formatter));
