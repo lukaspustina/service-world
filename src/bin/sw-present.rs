@@ -1,6 +1,9 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 
+// Ignore Clippy lints
+#![allow(unknown_lints)]
+
 #[macro_use]
 extern crate error_chain;
 extern crate clap;
@@ -52,6 +55,7 @@ fn run() -> Result<()> {
 }
 
 #[get("/")]
+#[allow(needless_pass_by_value)]
 fn index(config: State<Config>) -> Result<content::Html<String>> {
     let mut buffer = vec![];
     gen_index_html(&config,&mut buffer)?;
@@ -62,6 +66,7 @@ fn index(config: State<Config>) -> Result<content::Html<String>> {
 }
 
 #[get("/services")]
+#[allow(needless_pass_by_value)]
 fn services(config: State<Config>, consul: State<Consul>) -> Result<content::Html<String>> {
     let mut buffer = vec![];
     gen_services_html(&config, &consul, &mut buffer)?;
@@ -116,7 +121,7 @@ fn gen_services_html(config: &Config, consul: &Consul, w: &mut Write) -> Result<
     let template_file = format!("{}/{}", &config.present.template_dir, template_filename);
 
     let catalog = consul.catalog()?;
-    let services = Services::from_catalog(&catalog, &config)?;
+    let services = Services::from_catalog(&catalog, config)?;
 
     services.render(&template_file, w).map_err(
         |e| e.into(),
