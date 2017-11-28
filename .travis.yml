@@ -1,0 +1,73 @@
+dist: trusty
+language: rust
+services: docker
+sudo: required
+env:
+  global:
+  - CRATE_NAME=service_world
+  - secure: NZN0ztv4oAEO+VFOhllRztAE4mVpG0NlGOK2wYWaQveN9cuiI60X6g7AVfmZki0cjjRL9ZkZfSE4ILK7P8TquiCYrkHy7wLXzIKxJwm2BojloWjLlGwX45FrMFWH1pC5IWlzNgmBy1Czc23dset6EFv5gHeI1Lt9gHwHMhmLQ3xJWHfakVH1h4P+pcmB73M9i7ZzlWURac1hBmJUnIZpGq5WkYIp2iT/8JQk2ZVdtNQT180M0RjSUC5WS7ZbHipLdc0PaqbTSCn4OcwkdLv95BjNqF0/2c+agbyeihfX5lhNm9fScHblB+OaXCP8C6brqLsKw7M8kGf5Ll4xCUIShgg0xvyd6Dh0zIYWQRJ7aIOI56zHajodS5UrlHOMbRVSsZ50+VWtylZOKgJ8CIwSxf+L6GZVfOCi1nVx1ebpeFdcj3rjP8aLhf6FaZ6jwfTIHe9FEq6lfTk9Y7N+pM88oZxwPOQkrD/pliZUFpBbjKYaBIgER2BabheV3p3+rNRdaO4HBm4c0epJ5bq9Uw6P6hasuu6OA2SEKeHbpKhgVTAnQAMqG8EpSNyM6Fc6+7lZ1mErtwLTgLMT6CgU38EeY+ceSChWJVgsA1W4uS/qgRkTDwm83FXKSMKoh2omYjjr4TiA3QndV7/ZWQ6P8ccwZGe64ggX19g7o3QRQELUV/g=
+matrix:
+  include:
+  - env: TARGET=x86_64-unknown-linux-gnu DEPLOY_ARCH=amd64
+    rust: nightly
+  - env: TARGET=x86_64-unknown-linux-musl
+    rust: nightly
+  - env: TARGET=x86_64-apple-darwin
+    rust: nightly
+    os: osx
+  - env: TARGET=armv7-unknown-linux-gnueabihf DEPLOY_ARCH=armhf
+    rust: nightly
+  - env: TARGET=x86_64-unknown-linux-gnu
+    rust: stable
+  - env: TARGET=x86_64-unknown-linux-gnu
+    rust: beta
+  allow_failures:
+  - rust: stable
+  - rust: beta
+branches:
+  only:
+  - master
+  - travis-ci
+  - "/^v.*$/"
+before_install: set -e
+install:
+- sh .ci/install.sh
+- source ~/.cargo/env || true
+script:
+- bash .ci/script.sh
+after_script: set +e
+before_deploy:
+- sh .ci/before_deploy.sh
+deploy:
+  matrix:
+  - provider: packagecloud
+    username: lukaspustina
+    token:
+      secure: SM2/BZdkaGv3X0jmojaDE9ovM7+Wd9Macsral+Z/1eX8pBfONtiDcauUZW0yRuJPCgBYRXErSYx/Hci9W4O8EvvjVdJNaEupegZlJwnqllGnhvLmEWYL5mDigPmXQVUmO38DfQiONFIiMb48Bt/EYHcf95ObSCqEIVVAFblTTZNzbmrFPzafFLMqr3qquPixPGIDXSeJbgC5WeS4ECkH+YZLhN3HmKSOPfQJRzGkHnIKZwuXqm11NCfSLrekPogg9XLhAAvnDyfX0myarPFqmDJhtuTK6IqZEnGyQBvg/jOnRsAPMzCMcnXR27ZWNBzyQv2Vb8WdchdMfEb/6qN/spuDmu68MtsIk9rXz2WDgHS8MMHk9RRrGzazY4rWPFQGkeTNJ3P1a6HTi4P+oXIHLQJQ1C/IuocPrtFkyGQwWl9ySpOOwwt4idSVVaq3wOQsrHNGhJykicQI20Gj059Sfud4B0SWgoEWp7gGhne0w4LJIF7mvt+0sKm3nZFIvZtWLdckh6m1jDT2lGmv3jPVgfdudczSsoAt35ktsvClCezoe2PbUYBNXPBA8QFzNYnL6yEAEtN/4L5pb5m5SwfD9VRLRNx5qZ11p5mFb8mJwUjFUP+xW/BpSztsMwN+KhYItY2G15k61HQJjkMY0p4U9w/T0GgOQItA/D1L2LCf2HM=
+    repository: opensource
+    dist: ubuntu/trusty
+    package_glob: "**/*.deb"
+    skip_cleanup: true
+    on:
+      tags: true
+      condition:
+      - "$TRAVIS_OS_NAME == linux"
+      - "$DEPLOY_ARCH"
+  - provider: releases
+    api_key:
+      secure: OmsdcscHM46e8ZnOET3fURlMPMTLHXXcmdyT3POACZiy5u0UxCnh5OCNWA585LK4SUIGhKxfjsO8LFdnwPZtUawJGJf3GBFMiLLxMUfEBgacL9D6iAOBMtu0AKGkcwo5jktsRzRZVPqkVuBsoWdaT72ARktcF/XFJ5/7IdG6haAxN2+YPqW5RndanaoGPRHK4/Y5m4UcPTfqYsdAY7ohUqIlSZOsrnPUXGSTmjx9m2NvqSlYltNoB3IV6yoJmmVeWXQuSHaxg/mwhSbkpGAeBbch9O2FxTkWlCr9ESHdA8fTo1GOpXRJeI1L6qW5tI/cdxuRrWIr2zeZWV83f6dm7ezwKAo958GXzJoa6aw1A8+hAo+y/wWLmUUDxotZhNZghBYORCMP9BSM3oBajWEL/4nCUMemQiDe8o/ejiUKMWRDGkS3Wu8BaXbZhzmDkSbNLjwcBMdn7HZbnoqe6kwDcZOE0fxvyAlbupoSWGa/BrJsClznuOVU2quG9FuBjpArJA6kdQLftj0hm1LfXgv0vrRuJ8gYGjmOP4rptIBL7neot+QmfnICeg9U5eeMBwrMmiNndqcbo7tI75luVsmdON0JsGTBxRzKKvjHjdMPzMiOrBun4vdCNgyuTMYx26wYqhBGMhMjj6PIqonyoHxdIwLPHbr2nXox5bnp0tp1qow=
+    file_glob: true
+    file: "$CRATE_NAME-$TRAVIS_TAG-$TARGET.*"
+    skip_cleanup: true
+    on:
+      tags: true
+      condition:
+      - "$TRAVIS_OS_NAME == linux"
+      - "$DEPLOY_ARCH"
+  - provider: script
+    script: ".ci/cargo_publish.sh ${CRATES_IO_TOKEN}"
+    on:
+      tags: true
+      condition:
+      - "$TRAVIS_OS_NAME == linux"
+      - "$DEPLOY_ARCH == amd64"
