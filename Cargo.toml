@@ -40,9 +40,3 @@ serde_derive = "^1.0"
 serde_json = "^1.0"
 tabwriter = "^1.0"
 toml = "^0.4"
-
-[dependencies.rocket_contrib]
-version = "0.3.3"
-default-features = false
-features = ["handlebars_templates", "json"]
-

@@ -7,7 +7,6 @@ extern crate consul as consul_api;
 extern crate error_chain;
 extern crate handlebars;
 extern crate rocket;
-extern crate rocket_contrib;
 #[macro_use]
 extern crate serde_derive;
 extern crate toml;

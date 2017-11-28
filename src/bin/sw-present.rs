@@ -6,21 +6,17 @@ extern crate error_chain;
 extern crate clap;
 extern crate handlebars;
 extern crate rocket;
-extern crate rocket_contrib;
 extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 extern crate service_world;
 
 use clap::{App, Arg};
 use handlebars::Handlebars;
 use rocket::{Request, State};
 use rocket::response::content;
-use rocket_contrib::Template;
 use service_world::config::Config;
 use service_world::consul::Consul;
 use service_world::present::Services;
-use std::io::{BufWriter, Write};
+use std::io::Write;
 use std::path::Path;
 
 fn run() -> Result<()> {
@@ -58,7 +54,7 @@ fn run() -> Result<()> {
 #[get("/")]
 fn index(config: State<Config>) -> Result<content::Html<String>> {
     let mut buffer = vec![];
-    gen_index_html(&config,&mut buffer);
+    gen_index_html(&config,&mut buffer)?;
 
     String::from_utf8(buffer)
         .map(content::Html)
@@ -67,11 +63,8 @@ fn index(config: State<Config>) -> Result<content::Html<String>> {
 
 #[get("/services")]
 fn services(config: State<Config>, consul: State<Consul>) -> Result<content::Html<String>> {
-    let catalog = consul.catalog().unwrap();
-    let services = Services::from_catalog(&catalog, &config).unwrap();
-
     let mut buffer = vec![];
-    gen_services_html(&config, &consul, &mut buffer);
+    gen_services_html(&config, &consul, &mut buffer)?;
 
     String::from_utf8(buffer)
         .map(content::Html)
@@ -80,10 +73,9 @@ fn services(config: State<Config>, consul: State<Consul>) -> Result<content::Htm
 
 fn launch_rocket(config: Config, consul: Consul) -> Result<()> {
 
-    let mut rocket = rocket::ignite()
+    let rocket = rocket::ignite()
         .catch(errors![not_found])
         .mount("/", routes![index, services])
-        .attach(Template::fairing())
         .manage(config)
         .manage(consul);
 
