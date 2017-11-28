@@ -91,7 +91,7 @@ impl Consul {
                     client
                         .catalog
                         .get_nodes(service.clone())
-                        .unwrap()
+                        .unwrap_or_else(|_|Vec::new())
                         .into_iter()
                         .filter(|node| node.ServiceTags.iter().any(|x| tag_filter(x)))
                         .map(|node| {

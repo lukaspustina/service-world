@@ -1,5 +1,5 @@
 use config::Config;
-use consul::{self, Catalog};
+use consul::{self, Consul, Catalog};
 use handlebars::Handlebars;
 use std::collections::HashMap;
 use std::io::Write;
@@ -112,6 +112,41 @@ mod handlebars_helper {
     }
 }
 
+pub fn gen_index_html(config: &Config, w: &mut Write) -> Result<()> {
+    let template_name = "index";
+
+    let template_filename = config.present.templates.get(template_name).ok_or_else(|| {
+        ErrorKind::TemplateNotSet(template_name.to_string())
+    })?;
+    // TODO: Let me be a path
+    let template_file = format!("{}/{}", &config.present.template_dir, template_filename);
+
+    let mut handlebars = Handlebars::new();
+    handlebars
+        .register_template_file(template_name, template_file)
+        .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
+    handlebars.renderw("index", config, w)
+        .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
+
+    Ok(())
+}
+
+pub fn gen_services_html(config: &Config, consul: &Consul, w: &mut Write) -> Result<()> {
+    let template_name = "services";
+
+    let template_filename = config.present.templates.get(template_name).ok_or_else(|| {
+        ErrorKind::TemplateNotSet(template_name.to_string())
+    })?;
+    // TODO: Let me be a path
+    let template_file = format!("{}/{}", &config.present.template_dir, template_filename);
+
+    let catalog = consul.catalog()
+        .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
+    let services = Services::from_catalog(&catalog, config)?;
+
+    services.render(&template_file, w)
+}
+
 fn generate_service_ulrs(
     config: &Config,
     service_name: &str,
@@ -137,6 +172,11 @@ fn generate_service_ulrs(
 
 error_chain! {
     errors {
+        TemplateNotSet(name: String) {
+            description("Tempalte not set")
+            display("Template not set '{}'", name)
+        }
+
         TemplateError(name: String) {
             description("Failed to render template")
             display("Failed to render template '{}'", name)
