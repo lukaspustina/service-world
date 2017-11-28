@@ -4,6 +4,7 @@ Discover services from Hashicorp's Consul.
 
 ## Todo
 
+* Replace Consul library
 * Show node metadata
-* Create web server with Rocket
+* Show service IDs and Alert IDs
 
