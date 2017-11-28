@@ -2,11 +2,13 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 
+#[cfg(feature = "bin-present")]
+extern crate rocket;
+
 extern crate consul as consul_api;
 #[macro_use]
 extern crate error_chain;
 extern crate handlebars;
-extern crate rocket;
 #[macro_use]
 extern crate serde_derive;
 extern crate toml;
