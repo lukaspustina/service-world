@@ -1,0 +1,4 @@
+.vagrant
+service-world/DEBIAN
+service-world/usr
+service-world*.deb

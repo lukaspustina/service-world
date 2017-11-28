@@ -1,0 +1,5 @@
+if which service >/dev/null 2>&1; then
+  service sw-present stop
+  exit 0
+fi
+

@@ -1,0 +1,19 @@
+chown root:root /etc/logrotate.d/sw-present
+chmod 644 /etc/logrotate.d/sw-present
+
+chown root:root /usr/sbin/sw-present
+chmod 755 /usr/sbin/sw-present
+
+chown root:root /etc/sw-present.conf
+chmod 644 /etc/sw-present.conf
+
+chown root:root /etc/init/sw-present.conf
+chmod 644 /etc/init/sw-present.conf
+
+chown root:root /usr/bin/sw-discover
+chmod 755 /usr/bin/sw-discover
+
+if which service >/dev/null 2>&1; then
+  service sw-present restart
+fi
+

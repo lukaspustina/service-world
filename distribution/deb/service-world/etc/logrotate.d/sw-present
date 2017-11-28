@@ -1,0 +1,11 @@
+/var/log/sw-present.log {
+	rotate 7
+	daily
+	create
+	missingok
+	notifempty
+	compress
+	postrotate
+		invoke-rc.d sw-present restart > /dev/null
+	endscript
+}
