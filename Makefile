@@ -1,13 +1,13 @@
 all: check test build
 
 build:
-	cargo build
+	cargo build --all-features
 
 check:
-	cargo check
+	cargo check --all-features
 
 test:
-	cargo test
+	cargo test --all-features
 
 clippy:
 	rustup run nightly cargo clippy
