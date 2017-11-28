@@ -40,7 +40,11 @@ impl Default for Config {
     fn default() -> Config {
         let general = General { project_name: "Service World".to_string() };
         let consul = Consul { urls: vec!["http://localhost:8500".to_string()] };
-        let present = Present { index_links: Vec::new(), template_dir: ".".to_string(), templates: HashMap::new() };
+        let present = Present {
+            index_links: Vec::new(),
+            template_dir: ".".to_string(),
+            templates: HashMap::new(),
+        };
         let services = HashMap::new();
 
         Config {

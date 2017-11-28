@@ -91,16 +91,15 @@ fn build_cli() -> App<'static, 'static> {
 fn terminal_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
     let mut tw = TabWriter::new(vec![]).padding(1);
     for service_name in catalog.services() {
-        let _ =
-            writeln!(
-                &mut tw,
-                "Service '{}' tagged with {}",
-                Color::Yellow.paint(service_name.as_ref()),
-                Color::Blue.paint(format!("{:?}",
-                                          catalog.service_tags(service_name)
-                                              .unwrap_or_else(Vec::new))
-                )
-            );
+        let _ = writeln!(
+            &mut tw,
+            "Service '{}' tagged with {}",
+            Color::Yellow.paint(service_name.as_ref()),
+            Color::Blue.paint(format!(
+                "{:?}",
+                catalog.service_tags(service_name).unwrap_or_else(Vec::new)
+            ))
+        );
 
         for node in catalog.nodes_by_service(service_name).ok_or_else(|| {
             ErrorKind::NoResults(format!("nodes for service {}", service_name))

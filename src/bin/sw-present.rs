@@ -35,13 +35,15 @@ fn run() -> Result<()> {
     let url: String = {
         let s = args.value_of("url")
             .or_else(||
-                // This is Rust at its not so finest: There's no coercing from Option<&String> to Option<&str>,
-                // so we have to reborrow.
-                config.consul.urls.get(0).map(|x| &**x)
-            )
-            .ok_or_else(||
-                ErrorKind::CliError("Url is neither specified as CLI parameter nor in configuration file".to_string())
-            )?;
+                // This is Rust at its not so finest: There's no coercing from Option<&String>
+                // to Option<&str>, so we have to reborrow.
+                config.consul.urls.get(0).map(|x| &**x))
+            .ok_or_else(|| {
+                ErrorKind::CliError(
+                    "Url is neither specified as CLI parameter nor in configuration file"
+                        .to_string(),
+                )
+            })?;
         s.to_string()
     };
     let consul = Consul::new(url);
@@ -58,11 +60,11 @@ fn run() -> Result<()> {
 #[allow(needless_pass_by_value)]
 fn index(config: State<Config>) -> Result<content::Html<String>> {
     let mut buffer = vec![];
-    gen_index_html(&config,&mut buffer)?;
+    gen_index_html(&config, &mut buffer)?;
 
-    String::from_utf8(buffer)
-        .map(content::Html)
-        .map_err(|_| Error::from(ErrorKind::OutputError))
+    String::from_utf8(buffer).map(content::Html).map_err(|_| {
+        Error::from(ErrorKind::OutputError)
+    })
 }
 
 #[get("/services")]
@@ -71,9 +73,9 @@ fn services(config: State<Config>, consul: State<Consul>) -> Result<content::Htm
     let mut buffer = vec![];
     gen_services_html(&config, &consul, &mut buffer)?;
 
-    String::from_utf8(buffer)
-        .map(content::Html)
-        .map_err(|_| Error::from(ErrorKind::OutputError))
+    String::from_utf8(buffer).map(content::Html).map_err(|_| {
+        Error::from(ErrorKind::OutputError)
+    })
 }
 
 fn launch_rocket(config: Config, consul: Consul) -> Result<()> {
@@ -106,9 +108,9 @@ fn gen_index_html(config: &Config, w: &mut Write) -> Result<()> {
     handlebars
         .register_template_file(template_name, template_file)
         .chain_err(|| ErrorKind::OutputError)?;
-    handlebars
-        .renderw("index", config, w)
-        .chain_err(|| ErrorKind::OutputError)?;
+    handlebars.renderw("index", config, w).chain_err(|| {
+        ErrorKind::OutputError
+    })?;
 
     Ok(())
 }
@@ -123,9 +125,7 @@ fn gen_services_html(config: &Config, consul: &Consul, w: &mut Write) -> Result<
     let catalog = consul.catalog()?;
     let services = Services::from_catalog(&catalog, config)?;
 
-    services.render(&template_file, w).map_err(
-        |e| e.into(),
-    )
+    services.render(&template_file, w).map_err(|e| e.into())
 }
 
 fn build_cli() -> App<'static, 'static> {

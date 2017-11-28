@@ -74,7 +74,8 @@ impl Consul {
             Box::new(|_x| true)
         };
 
-        // consul library isn't really friendly to chain error, because it return String as Error type
+        // consul library isn't really friendly to chain error,
+        // because it return String as Error type
         let services: HashMap<String, Vec<String>> = match client.catalog.services() {
             Ok(x) => x,
             Err(cause) => bail!(ErrorKind::ConsulError(cause)),
