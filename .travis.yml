@@ -2,44 +2,60 @@ dist: trusty
 language: rust
 services: docker
 sudo: required
+
 env:
   global:
-  - CRATE_NAME=service_world
-  - secure: NZN0ztv4oAEO+VFOhllRztAE4mVpG0NlGOK2wYWaQveN9cuiI60X6g7AVfmZki0cjjRL9ZkZfSE4ILK7P8TquiCYrkHy7wLXzIKxJwm2BojloWjLlGwX45FrMFWH1pC5IWlzNgmBy1Czc23dset6EFv5gHeI1Lt9gHwHMhmLQ3xJWHfakVH1h4P+pcmB73M9i7ZzlWURac1hBmJUnIZpGq5WkYIp2iT/8JQk2ZVdtNQT180M0RjSUC5WS7ZbHipLdc0PaqbTSCn4OcwkdLv95BjNqF0/2c+agbyeihfX5lhNm9fScHblB+OaXCP8C6brqLsKw7M8kGf5Ll4xCUIShgg0xvyd6Dh0zIYWQRJ7aIOI56zHajodS5UrlHOMbRVSsZ50+VWtylZOKgJ8CIwSxf+L6GZVfOCi1nVx1ebpeFdcj3rjP8aLhf6FaZ6jwfTIHe9FEq6lfTk9Y7N+pM88oZxwPOQkrD/pliZUFpBbjKYaBIgER2BabheV3p3+rNRdaO4HBm4c0epJ5bq9Uw6P6hasuu6OA2SEKeHbpKhgVTAnQAMqG8EpSNyM6Fc6+7lZ1mErtwLTgLMT6CgU38EeY+ceSChWJVgsA1W4uS/qgRkTDwm83FXKSMKoh2omYjjr4TiA3QndV7/ZWQ6P8ccwZGe64ggX19g7o3QRQELUV/g=
+    - CRATE_NAME=mhost
+    - secure: PqNMjH4WxLHuo5XZRF4EKgM7cYGQXfwMKaHnf5uwrCYT1ZH2Lgaz/BP3wxuXdHqGWux8QzhF4lL9gwq9JmuaSljtAMtl3YNcCFgXvrzXjGzrIX4Yk6Xc+lZ8AVyUPik0FBcaUFvdDEhA+bFGCFv3O2VpjS+uSkdTjwiKDTKMqec6ijRs5cS873KGZDVBuyaLUYXqgEoRSEcAtd11QV53FOuNVlkPX4iOQkVJtOIk5hGvdzr9BujJ1SWXWd70AUqWxZkHG8Tg2l18AJXOjeECJZL8bNHXBP3ITC2MsYAoQuvHwn48qMbs4zZu27QP6PJx0s2Ns6Zj2f1v+tX67qcF0/XULhn8cNVXW2m5JA7jW24UH2vZSudSrGCIX4QfTIkleZ6lvygaWCj/CbxpTosg+01qhdcEHPYQw06Ge4b0vNA62ngqeJC15i6sMCM2OrzpmLBmjakQXkQ2NVWLZ3b0Av66OTZlUnpCWNgWI1ywi2lB09EeFQRDL7aNBF3Q+qa68zx+/Lleid4uqCM5C8I1HpqxHwsBYam5lYrae4+UytPc3kX+NbOLRHorXA81CVPLhRzFnsMYDtqaT/dmrQx3YK8A+3ND39he/rR5h4y39rfBle0OVNnyjNA1vl5xu+GtnPPWPHN/e4gR0uTEjXY6GpyEv9xpDseA9iKO56h1bUc=
+
 matrix:
   include:
-  - env: TARGET=x86_64-unknown-linux-gnu DEPLOY_ARCH=amd64
-    rust: nightly
-  - env: TARGET=x86_64-unknown-linux-musl
-    rust: nightly
-  - env: TARGET=x86_64-apple-darwin
-    rust: nightly
-    os: osx
-  - env: TARGET=armv7-unknown-linux-gnueabihf DEPLOY_ARCH=armhf
-    rust: nightly
-  - env: TARGET=x86_64-unknown-linux-gnu
-    rust: stable
-  - env: TARGET=x86_64-unknown-linux-gnu
-    rust: beta
+    # Linux
+    - env: TARGET=x86_64-unknown-linux-gnu DEPLOY_ARCH=amd64
+      rust: nightly
+    - env: TARGET=x86_64-unknown-linux-musl
+      rust: nightly
+
+    # macOS
+    - env: TARGET=x86_64-apple-darwin
+      rust: nightly
+      os: osx
+
+    # Rapsi
+    - env: TARGET=armv7-unknown-linux-gnueabihf DEPLOY_ARCH=armhf
+      rust: nightly
+
+    # Testing for future releases of Rust
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: beta
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: stable
+
   allow_failures:
-  - rust: stable
-  - rust: beta
+    - rust: beta
+    - rust: nightly
+
 branches:
   only:
-  - master
-  - travis-ci
-  - "/^v.*$/"
+    - master
+    - travis-ci
+    - "/^v.*$/"
+
 before_install: set -e
+
 install:
-- sh .ci/install.sh
-- source ~/.cargo/env || true
+  - sh .ci/install.sh
+  - source ~/.cargo/env || true
+
 script:
-- bash .ci/script.sh
+  - bash .ci/script.sh
+
 after_script: set +e
+
 before_deploy:
-- sh .ci/before_deploy.sh
+  - sh .ci/before_deploy.sh
+
 deploy:
-  matrix:
   - provider: packagecloud
     username: lukaspustina
     token:
@@ -55,7 +71,7 @@ deploy:
       - "$DEPLOY_ARCH"
   - provider: releases
     api_key:
-      secure: OmsdcscHM46e8ZnOET3fURlMPMTLHXXcmdyT3POACZiy5u0UxCnh5OCNWA585LK4SUIGhKxfjsO8LFdnwPZtUawJGJf3GBFMiLLxMUfEBgacL9D6iAOBMtu0AKGkcwo5jktsRzRZVPqkVuBsoWdaT72ARktcF/XFJ5/7IdG6haAxN2+YPqW5RndanaoGPRHK4/Y5m4UcPTfqYsdAY7ohUqIlSZOsrnPUXGSTmjx9m2NvqSlYltNoB3IV6yoJmmVeWXQuSHaxg/mwhSbkpGAeBbch9O2FxTkWlCr9ESHdA8fTo1GOpXRJeI1L6qW5tI/cdxuRrWIr2zeZWV83f6dm7ezwKAo958GXzJoa6aw1A8+hAo+y/wWLmUUDxotZhNZghBYORCMP9BSM3oBajWEL/4nCUMemQiDe8o/ejiUKMWRDGkS3Wu8BaXbZhzmDkSbNLjwcBMdn7HZbnoqe6kwDcZOE0fxvyAlbupoSWGa/BrJsClznuOVU2quG9FuBjpArJA6kdQLftj0hm1LfXgv0vrRuJ8gYGjmOP4rptIBL7neot+QmfnICeg9U5eeMBwrMmiNndqcbo7tI75luVsmdON0JsGTBxRzKKvjHjdMPzMiOrBun4vdCNgyuTMYx26wYqhBGMhMjj6PIqonyoHxdIwLPHbr2nXox5bnp0tp1qow=
+      secure: drj6ONedluZto8vwLy1KaXHeFwqRPfAqKvwSg1WoVDcWMzt6Fv1GERIMbNx2h/nvDkGRhVV0AVN9Kax6tv9hSrY6F9jaRs3+2GRRfCMoIhSLsq/1vyvL3F040IkSPIhTsEkaeapJTdU8jS3PkAFguGhQkycssfOnDxTGY6/SBw8QNRuin0enZoxASH7gVqZxLk1FjOg2PC+GliZm8my9hJOVVjmE24+Dp3NUKtJFKvr+K9YwYUqh243G8dWXAN7AopwbiZCNkazFeCMdlCdPDfR4gmQl7g58/qAQO5BaOiaUICBdFALRQ3kti4c42e7UbVfA7gpVa6X1hiMUtt91nImGkvsVftqavnFiREMhDVU6nycT7Afo6SCLWASQE/ZUKKJI8aRNVstTzoiaRh+m4tfLqUzkeuG6jWsz202zioUpAAK/ya1lCLzrjDoyp/6Y87HLaKQh7Gbwr7l6he4n3ND1wOfFKl76XnXBS2d6sin1P6mvtC0j8PRoaZAgnJii6i7GXmYYHX/Z9LfIqOVKeXUKj7nvcNSl94XLQwbewnhBqIWLXZS4aB8W0Jx8qtVXonBmHdVtlul62/NTr746SgWVwBzBraKwxDT9LCyiqk55m4D07MMnoCZ/D7EkoT4htQHLrGF1sYnsb4FReDGj0z5W/i+9r5p+IisNQzDWglc=
     file_glob: true
     file: "$CRATE_NAME-$TRAVIS_TAG-$TARGET.*"
     skip_cleanup: true
@@ -65,9 +81,10 @@ deploy:
       - "$TRAVIS_OS_NAME == linux"
       - "$DEPLOY_ARCH"
   - provider: script
-    script: ".ci/cargo_publish.sh ${CRATES_IO_TOKEN}"
+    script: .ci/cargo_publish.sh ${CRATES_IO_TOKEN}
     on:
       tags: true
       condition:
       - "$TRAVIS_OS_NAME == linux"
       - "$DEPLOY_ARCH == amd64"
+
