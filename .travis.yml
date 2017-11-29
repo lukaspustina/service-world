@@ -69,6 +69,19 @@ deploy:
       condition:
       - "$TRAVIS_OS_NAME == linux"
       - "$DEPLOY_ARCH"
+  - provider: packagecloud
+    username: lukaspustina-cd
+    token:
+      secure: W737QF1pFxEUaBUJmkFPYsHNl+9oFXu8k8jrGpRvw/+zhwppDXvF3ylp7aPM/OS3BFWUNOFAjUIlWV9EN78uPV7J/bHU9ooeHDSYLJyywo9upe5oR8nxpp6kflWHxveG19hHAV8ybSx5dXlCNlLnXy9mVPTMamuC0wpo+0Bfz1ytGIQ/hHdjWbo3yiQ0xmguip2eMchFTeT4hlUJMtbhC+JHfA1j0+i0m8U8tae3NZuU8pBd8jl5NnZwfMGxfpDnKJQjRF+qpwG0YuLPiEvhnVZJlYKkjEU6U2CEfFCyFBq1plwbNaxEE4ZgPZtPu0PVJObUW/Jq3qJubIi1s253JBy55QB61ei4tMzbCWoEr9NfUv8JymeqNk6m+ec9H4lfKGMAlidcXUocG4XiY8XsLU8A1uUHD0Pqaoc3wR1or/Kzhvu+TpBxq5hAQ5J5eNR+pLRpSkCqe7ZXq1xYzbf+uwii5XdjG4ujpPA9weQ9LweMndCnF/tZfr5/kTbYYB4KWTte/Gbnxh7jXF72TxVe2p3nP1nT++nOGUgg7hTrYSzBIJmXh8NwYDy48nPtQmsyc0XIGk8LEwIxdyPcxrbucTDnDRFMRtSz5xbllIf6z/+YxS0iCydLJAeL78XAKy6pjm3kfitRlDvkC49JNNP4Rkij8sBxAy4hfbZ235QbYSE=
+    repository: opensource
+    dist: ubuntu/trusty
+    package_glob: "**/*.deb"
+    skip_cleanup: true
+    on:
+      tags: true
+      condition:
+      - "$TRAVIS_OS_NAME == linux"
+      - "$DEPLOY_ARCH"
   - provider: releases
     api_key:
       secure: drj6ONedluZto8vwLy1KaXHeFwqRPfAqKvwSg1WoVDcWMzt6Fv1GERIMbNx2h/nvDkGRhVV0AVN9Kax6tv9hSrY6F9jaRs3+2GRRfCMoIhSLsq/1vyvL3F040IkSPIhTsEkaeapJTdU8jS3PkAFguGhQkycssfOnDxTGY6/SBw8QNRuin0enZoxASH7gVqZxLk1FjOg2PC+GliZm8my9hJOVVjmE24+Dp3NUKtJFKvr+K9YwYUqh243G8dWXAN7AopwbiZCNkazFeCMdlCdPDfR4gmQl7g58/qAQO5BaOiaUICBdFALRQ3kti4c42e7UbVfA7gpVa6X1hiMUtt91nImGkvsVftqavnFiREMhDVU6nycT7Afo6SCLWASQE/ZUKKJI8aRNVstTzoiaRh+m4tfLqUzkeuG6jWsz202zioUpAAK/ya1lCLzrjDoyp/6Y87HLaKQh7Gbwr7l6he4n3ND1wOfFKl76XnXBS2d6sin1P6mvtC0j8PRoaZAgnJii6i7GXmYYHX/Z9LfIqOVKeXUKj7nvcNSl94XLQwbewnhBqIWLXZS4aB8W0Jx8qtVXonBmHdVtlul62/NTr746SgWVwBzBraKwxDT9LCyiqk55m4D07MMnoCZ/D7EkoT4htQHLrGF1sYnsb4FReDGj0z5W/i+9r5p+IisNQzDWglc=
