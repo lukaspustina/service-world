@@ -1,20 +1,159 @@
-use consul_api::Client;
+use futures::{future, Future, Stream};
+use hyper::{Client as HyperClient, Uri};
+use serde::de::DeserializeOwned;
+use serde_json;
 use std::collections::HashMap;
-use std::iter::FromIterator;
+use std::str;
+use tokio_core::reactor::Core;
 
-#[derive(Debug, Serialize)]
+trait Client {
+    fn new(urls: Vec<String>) -> Result<Self>
+    where
+        Self: ::std::marker::Sized;
+    fn services(&mut self) -> Result<HashMap<String, Vec<String>>>;
+    fn nodes(&mut self, services: &[&str]) -> Result<HashMap<String, Vec<Node>>>;
+    fn healthy_nodes(&mut self, services: &[&str]) -> Result<HashMap<String, Vec<Health>>>;
+}
+
+#[derive(Debug)]
+pub struct SyncClient {
+    urls: Vec<String>,
+    core: Core,
+}
+
+impl Client for SyncClient {
+    fn new(urls: Vec<String>) -> Result<SyncClient> {
+        let core = Core::new().chain_err(|| ErrorKind::TokioError)?;
+
+        Ok(SyncClient { urls, core })
+    }
+
+    fn services(&mut self) -> Result<HashMap<String, Vec<String>>> {
+        let uri_str = format!("{}/v1/catalog/services", self.urls[0]);
+        let uri: Uri = uri_str.parse().chain_err(|| {
+            ErrorKind::ConsulError("could not parse url".to_string())
+        })?;
+        let hyper = HyperClient::new(&self.core.handle());
+        let call = hyper.get(uri).and_then(|res| res.body().concat2()).map(
+            |body| {
+                let json = str::from_utf8(&body).chain_err(|| {
+                    ErrorKind::ConsulError("Failed to read JSON".to_string())
+                })?;
+                let ss: HashMap<String, Vec<String>> = serde_json::from_str(json).chain_err(|| {
+                    ErrorKind::ConsulError("Failed to deserialize JSON".to_string())
+                })?;
+                Ok(ss)
+            },
+        );
+
+        self.core.run(call).chain_err(|| {
+            ErrorKind::ConsulError("failed to get services".to_string())
+        })?
+    }
+
+    fn nodes(&mut self, services: &[&str]) -> Result<HashMap<String, Vec<Node>>> {
+        let base_uri = format!("{}/v1/catalog/service/{{}}", self.urls[0]);
+        consul_calls_by_services(&mut self.core, &base_uri, services)
+    }
+
+    fn healthy_nodes(&mut self, services: &[&str]) -> Result<HashMap<String, Vec<Health>>> {
+        let base_uri = format!("{}/v1/health/service/{{}}?passing", self.urls[0]);
+        consul_calls_by_services(&mut self.core, &base_uri, services)
+    }
+}
+
+fn consul_calls_by_services<T: DeserializeOwned>(
+    core: &mut Core,
+    uri_base: &str,
+    services: &[&str],
+) -> Result<HashMap<String, Vec<T>>> {
+    let service_calls: Result<Vec<_>> = services
+        .iter()
+        .map(|service| {
+            let uri_str = rt_format!(uri_base, service).unwrap(); // Unsafe
+            let uri: Uri = uri_str.parse().chain_err(|| {
+                ErrorKind::ConsulError("could not parse url".to_string())
+            })?;
+            let hyper = HyperClient::new(&core.handle());
+            let service_name = service.to_string();
+            let call = hyper.get(uri).and_then(|res| res.body().concat2()).map(
+                |body| {
+                    let json = str::from_utf8(&body).chain_err(|| {
+                        ErrorKind::ConsulError(format!(
+                            "Failed to read JSON for service '{}'",
+                            service_name
+                        ))
+                    })?;
+                    let ss: Vec<T> = serde_json::from_str(json).chain_err(|| {
+                        ErrorKind::ConsulError(format!(
+                            "Failed to deserialize JSON for service '{}'",
+                            service_name
+                        ))
+                    })?;
+                    Ok((service_name, ss))
+                },
+            );
+            Ok(call)
+        })
+        .collect();
+
+    service_calls
+        .map(|calls| {
+            let joined = future::join_all(calls)
+                .and_then(move |answers: Vec<Result<(String, Vec<_>)>>| {
+                    // Results are Ok((String, Vec<Node>);
+                    // Errs are not arrive here due to the semantics of join_all.
+                    let result: HashMap<String, Vec<T>> = answers
+                    .into_iter()
+                    .map(|x| x.unwrap()) // Safe
+                    .collect();
+
+                    future::ok(result)
+                })
+                .map_err(move |e| Error::with_chain(e, ErrorKind::TokioError));
+
+            core.run(joined)
+        })
+        .chain_err(|| {
+            ErrorKind::ConsulError("failed to get nodes for services".to_string())
+        })?
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Node {
+    #[serde(rename = "ID")]
+    pub id: String,
+    #[serde(rename = "Node")]
     pub name: String,
+    #[serde(rename = "ServiceAddress")]
     pub address: String,
+    #[serde(rename = "ServicePort")]
     pub service_port: u16,
+    #[serde(rename = "ServiceTags")]
     pub service_tags: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Health {
+    #[serde(rename = "Node")]
+    pub node: HealthyNode,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct HealthyNode {
+    #[serde(rename = "ID")]
+    pub id: String,
+    #[serde(rename = "Node")]
+    pub name: String,
+    #[serde(rename = "Address")]
+    pub address: String,
 }
 
 #[derive(Debug, Serialize)]
 pub struct Catalog {
     pub services: HashMap<String, Vec<String>>,
     nodes_by_service: HashMap<String, Vec<Node>>,
-    healthy_nodes_by_service: HashMap<String, Vec<String>>,
+    healthy_nodes_by_service: HashMap<String, Vec<Health>>,
 }
 
 impl Catalog {
@@ -35,8 +174,10 @@ impl Catalog {
     pub fn is_node_healthy_for_service(&self, node: &Node, service_name: &str) -> bool {
         self.healthy_nodes_by_service.get(service_name).map_or(
             false,
-            |x| {
-                x.contains(&node.address)
+            |xs| {
+                // TODO: Fix me -- that is uncessary
+                let ids: Vec<_> = xs.iter().map(|x| x.node.id.clone()).collect();
+                ids.contains(&node.id)
             },
         )
     }
@@ -60,7 +201,7 @@ impl Consul {
         services: Option<Vec<String>>,
         tags: Option<Vec<String>>,
     ) -> Result<Catalog> {
-        let client = Client::new(&self.url);
+        let mut client = SyncClient::new(vec![self.url.clone()])?;
 
         let service_filter: Box<Fn(&String) -> bool> = if let Some(services) = services {
             Box::new(move |x| services.contains(x))
@@ -74,48 +215,32 @@ impl Consul {
             Box::new(|_x| true)
         };
 
-        // consul library isn't really friendly to chain error,
-        // because it return String as Error type
-        let services: HashMap<String, Vec<String>> = match client.catalog.services() {
-            Ok(x) => x,
-            Err(cause) => bail!(ErrorKind::ConsulError(cause)),
-        }.into_iter()
-            .filter(|&(ref key, _)| service_filter(key))
-            .filter(|&(_, ref values)| values.iter().any(|x| tag_filter(x)))
-            .collect();
+        let services: HashMap<String, Vec<String>> = client.services().map(|h| {
+            h.into_iter()
+                .filter(|&(ref key, _)| service_filter(key))
+                .filter(|&(_, ref values)| values.iter().any(|x| tag_filter(x)))
+                .collect()
+        })?;
 
-        let nodes_by_service: HashMap<String, Vec<_>> =
-            HashMap::from_iter(services.keys().map(|service| {
-                (
-                    service.to_string(),
-                    client
-                        .catalog
-                        .get_nodes(service.clone())
-                        .unwrap_or_else(|_|Vec::new())
-                        .into_iter()
-                        .filter(|node| node.ServiceTags.iter().any(|x| tag_filter(x)))
-                        .map(|node| {
-                            Node {
-                                name: node.Node,
-                                address: node.Address,
-                                service_port: node.ServicePort,
-                                service_tags: node.ServiceTags,
-                            }
-                        })
-                        .collect::<Vec<_>>(),
-                )
-            }));
+        let nodes_by_service: HashMap<String, Vec<_>> = {
+            let service_names: Vec<_> = services.keys().map(|s| &**s).collect();
+            client.nodes(&service_names).map(|h| {
+                h.into_iter()
+                    .map(|(service, values)| {
+                        let v = values
+                            .into_iter()
+                            .filter(|node| node.service_tags.iter().any(|x| tag_filter(x)))
+                            .collect::<Vec<_>>();
+                        (service, v)
+                    })
+                    .collect()
+            })?
+        };
 
-        let healthy_nodes_by_service: HashMap<String, Vec<_>> =
-            HashMap::from_iter(services.keys().map(|service| {
-                (
-                    service.to_string(),
-                    client
-                        .health
-                        .healthy_nodes_by_service(service)
-                        .unwrap_or_else(|_| Vec::new()),
-                )
-            }));
+        let healthy_nodes_by_service: HashMap<String, Vec<_>> = {
+            let service_names: Vec<_> = services.keys().map(|s| &**s).collect();
+            client.healthy_nodes(&service_names)?
+        };
 
         Ok(Catalog {
             services,
@@ -127,6 +252,11 @@ impl Consul {
 
 error_chain! {
     errors {
+        TokioError {
+            description("Failed to use Tokio")
+            display("Failed to use Tokio")
+        }
+
         ConsulError(cause: String) {
             description("Failed get data from Consul")
             display("Failed get data from Consul because {}", cause)

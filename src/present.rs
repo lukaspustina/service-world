@@ -125,8 +125,9 @@ pub fn gen_index_html(config: &Config, w: &mut Write) -> Result<()> {
     handlebars
         .register_template_file(template_name, template_file)
         .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
-    handlebars.renderw("index", config, w)
-        .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
+    handlebars.renderw("index", config, w).chain_err(|| {
+        ErrorKind::TemplateError(template_name.to_string())
+    })?;
 
     Ok(())
 }
@@ -140,8 +141,9 @@ pub fn gen_services_html(config: &Config, consul: &Consul, w: &mut Write) -> Res
     // TODO: Let me be a path
     let template_file = format!("{}/{}", &config.present.template_dir, template_filename);
 
-    let catalog = consul.catalog()
-        .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
+    let catalog = consul.catalog().chain_err(|| {
+        ErrorKind::TemplateError(template_name.to_string())
+    })?;
     let services = Services::from_catalog(&catalog, config)?;
 
     services.render(&template_file, w)
