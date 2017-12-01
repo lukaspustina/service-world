@@ -30,6 +30,7 @@ fn run() -> Result<()> {
     let mut writer = std::io::stdout();
     match output {
         "json" => json_output(&mut writer, &catalog),
+        "details" => terminal_details_output(&mut writer, &catalog),
         _ => terminal_output(&mut writer, &catalog),
     }
 }
@@ -75,7 +76,7 @@ fn build_cli() -> App<'static, 'static> {
                 .short("o")
                 .takes_value(true)
                 .default_value("terminal")
-                .possible_values(&["terminal", "json"])
+                .possible_values(&["terminal", "details", "json"])
                 .help("Selects output module"),
         )
         .arg(
@@ -123,6 +124,68 @@ fn terminal_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
                         Color::Blue.paint(format!("{:?}", node.service_tags)),
                     );
         }
+        let _ = writeln!(&mut tw, "");
+    }
+
+    let out_str = String::from_utf8(tw.into_inner().chain_err(|| ErrorKind::OutputError)?)
+        .chain_err(|| ErrorKind::OutputError)?;
+    write!(w, "{}", out_str).chain_err(|| ErrorKind::OutputError)
+}
+
+fn terminal_details_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
+    let mut tw = TabWriter::new(vec![]).padding(1);
+    for service_name in catalog.services() {
+        let _ = writeln!(
+            &mut tw,
+            "Service '{}' tagged with {}",
+            Color::Yellow.paint(service_name.as_ref()),
+            Color::Blue.paint(format!(
+                "{:?}",
+                catalog.service_tags(service_name).unwrap_or_else(Vec::new)
+            ))
+        );
+
+        for node in catalog.nodes_by_service(service_name).ok_or_else(|| {
+            ErrorKind::NoResults(format!("nodes for service {}", service_name))
+        })?
+            {
+                let (node_name, health_indicator) =
+                    if catalog.is_node_healthy_for_service(node, service_name) {
+                        (Color::Green.paint(node.name.as_ref()), "up")
+                    } else {
+                        (Color::Red.paint(node.name.as_ref()), "DOWN")
+                    };
+
+                let _ =
+                    writeln!(
+                        &mut tw,
+                        "\t* {}\t{}\tid:{}",
+                        health_indicator,
+                        node_name,
+                        node.id,
+                    );
+                let _ =
+                    writeln!(
+                        &mut tw,
+                        "\t\tmeta:{}",
+                        Color::Blue.paint(format!("{:?}", node.meta_data)),
+                    );
+                let _ =
+                    writeln!(
+                        &mut tw,
+                        "\t\tip:{}, port:{}",
+                        Color::Cyan.paint(format!("{}", node.address)),
+                        Color::Cyan.paint(format!("{}", node.service_port)),
+                    );
+                let _ =
+                    writeln!(
+                        &mut tw,
+                        "\t\tservice_id:{}, service_name:{}, tags:{}",
+                        Color::Yellow.paint(format!("{}", node.service_id)),
+                        Color::Yellow.paint(format!("{}", node.service_name)),
+                        Color::Blue.paint(format!("{:?}", node.service_tags)),
+                    );
+            }
         let _ = writeln!(&mut tw, "");
     }
 

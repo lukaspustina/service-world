@@ -125,12 +125,18 @@ pub struct Node {
     pub id: String,
     #[serde(rename = "Node")]
     pub name: String,
-    #[serde(rename = "ServiceAddress")]
+    #[serde(rename = "NodeMeta")]
+    pub meta_data: HashMap<String, String>,
+    #[serde(rename = "Address")]
     pub address: String,
     #[serde(rename = "ServicePort")]
     pub service_port: u16,
     #[serde(rename = "ServiceTags")]
     pub service_tags: Vec<String>,
+    #[serde(rename = "ServiceID")]
+    pub service_id: String,
+    #[serde(rename = "ServiceName")]
+    pub service_name: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
