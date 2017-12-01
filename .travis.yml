@@ -73,7 +73,7 @@ deploy:
     username: lukaspustina-cd
     token:
       secure: W737QF1pFxEUaBUJmkFPYsHNl+9oFXu8k8jrGpRvw/+zhwppDXvF3ylp7aPM/OS3BFWUNOFAjUIlWV9EN78uPV7J/bHU9ooeHDSYLJyywo9upe5oR8nxpp6kflWHxveG19hHAV8ybSx5dXlCNlLnXy9mVPTMamuC0wpo+0Bfz1ytGIQ/hHdjWbo3yiQ0xmguip2eMchFTeT4hlUJMtbhC+JHfA1j0+i0m8U8tae3NZuU8pBd8jl5NnZwfMGxfpDnKJQjRF+qpwG0YuLPiEvhnVZJlYKkjEU6U2CEfFCyFBq1plwbNaxEE4ZgPZtPu0PVJObUW/Jq3qJubIi1s253JBy55QB61ei4tMzbCWoEr9NfUv8JymeqNk6m+ec9H4lfKGMAlidcXUocG4XiY8XsLU8A1uUHD0Pqaoc3wR1or/Kzhvu+TpBxq5hAQ5J5eNR+pLRpSkCqe7ZXq1xYzbf+uwii5XdjG4ujpPA9weQ9LweMndCnF/tZfr5/kTbYYB4KWTte/Gbnxh7jXF72TxVe2p3nP1nT++nOGUgg7hTrYSzBIJmXh8NwYDy48nPtQmsyc0XIGk8LEwIxdyPcxrbucTDnDRFMRtSz5xbllIf6z/+YxS0iCydLJAeL78XAKy6pjm3kfitRlDvkC49JNNP4Rkij8sBxAy4hfbZ235QbYSE=
-    repository: opensource
+    repository: infrastructure
     dist: ubuntu/trusty
     package_glob: "**/*.deb"
     skip_cleanup: true
