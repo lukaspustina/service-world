@@ -42,9 +42,6 @@ $(BASE_NAME)/DEBIAN/prerm: templates/DEBIAN/prerm
 $(BASE_NAME)/DEBIAN/conffiles: templates/DEBIAN/conffiles
 	cp $< $@
 
-$(BASE_NAME)/etc/$(BASE_NAME):
-	mkdir -p $@
-
 $(BASE_NAME)/usr/bin:
 	mkdir -p $@
 
