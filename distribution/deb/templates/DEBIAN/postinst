@@ -4,9 +4,6 @@ chmod 644 /etc/logrotate.d/sw-present
 chown root:root /usr/sbin/sw-present
 chmod 755 /usr/sbin/sw-present
 
-chown root:root /etc/sw-present
-chmod 755 /etc/sw-present.conf
-
 chown root:root /etc/sw-present/sw-present.conf
 chmod 644 /etc/sw-present/sw-present.conf
 
