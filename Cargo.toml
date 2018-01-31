@@ -1,6 +1,6 @@
 [package]
 name = "service_world"
-version = "0.0.9"
+version = "0.0.10"
 authors = ["Lukas Pustina <lukas@pustina.net>"]
 description = "Discover services from Hasicorp's consul"
 repository = "https://github.com/lukaspustina/service-world.git"
@@ -38,8 +38,8 @@ error-chain = "^0.11"
 futures = "0.1"
 handlebars = "^0.29"
 hyper = "0.11"
-rocket = "^0.3.3"
-rocket_codegen = "^0.3.3"
+rocket = "^0.3.6"
+rocket_codegen = "^0.3.6"
 runtime-fmt = "0.3.0"
 serde = "^1.0"
 serde_derive = "^1.0"
