@@ -175,7 +175,7 @@ fn generate_service_ulrs(
 error_chain! {
     errors {
         TemplateNotSet(name: String) {
-            description("Tempalte not set")
+            description("Template not set")
             display("Template not set '{}'", name)
         }
 
