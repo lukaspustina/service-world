@@ -52,12 +52,14 @@ impl Client for SyncClient {
     }
 
     fn nodes(&mut self, services: &[&str]) -> Result<HashMap<String, Vec<Node>>> {
-        let base_uri = format!("{}/v1/catalog/service/{{}}", self.urls[0]);
+        let base_uri = format!("{}/v1/catalog/service/@@", self.urls[0]);
         consul_calls_by_services(&mut self.core, &base_uri, services)
     }
 
     fn healthy_nodes(&mut self, services: &[&str]) -> Result<HashMap<String, Vec<Health>>> {
-        let base_uri = format!("{}/v1/health/service/{{}}?passing", self.urls[0]);
+        // @@ is a place holder used in `consul_calls_by_services` to insert the service name into
+        // this url
+        let base_uri = format!("{}/v1/health/service/@@?passing", self.urls[0]);
         consul_calls_by_services(&mut self.core, &base_uri, services)
     }
 }
@@ -70,7 +72,7 @@ fn consul_calls_by_services<T: DeserializeOwned>(
     let service_calls: Result<Vec<_>> = services
         .iter()
         .map(|service| {
-            let uri_str = rt_format!(uri_base, service).unwrap(); // Unsafe
+            let uri_str = uri_base.replace("@@", service);
             let uri: Uri = uri_str.parse().chain_err(|| {
                 ErrorKind::ConsulError("could not parse url".to_string())
             })?;
