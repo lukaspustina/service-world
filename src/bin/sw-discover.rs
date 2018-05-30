@@ -95,7 +95,7 @@ fn terminal_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
         let _ = writeln!(
             &mut tw,
             "Service '{}' tagged with {}",
-            Color::Yellow.paint(service_name.as_ref()),
+            Color::Yellow.paint(format!("{}", service_name)),
             Color::Blue.paint(format!(
                 "{:?}",
                 catalog.service_tags(service_name).unwrap_or_else(Vec::new)
@@ -108,9 +108,9 @@ fn terminal_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
         {
             let (node_name, health_indicator) =
                 if catalog.is_node_healthy_for_service(node, service_name) {
-                    (Color::Green.paint(node.name.as_ref()), ":-)")
+                    (Color::Green.paint(format!("{}", node.name)), ":-)")
                 } else {
-                    (Color::Red.paint(node.name.as_ref()), ":-(")
+                    (Color::Red.paint(format!("{}", node.name)), ":-(")
                 };
 
             let _ =
@@ -138,7 +138,7 @@ fn terminal_details_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
         let _ = writeln!(
             &mut tw,
             "Service '{}' tagged with {}",
-            Color::Yellow.paint(service_name.as_ref()),
+            Color::Yellow.paint(format!("{}", service_name)),
             Color::Blue.paint(format!(
                 "{:?}",
                 catalog.service_tags(service_name).unwrap_or_else(Vec::new)
@@ -151,9 +151,9 @@ fn terminal_details_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
             {
                 let (node_name, health_indicator) =
                     if catalog.is_node_healthy_for_service(node, service_name) {
-                        (Color::Green.paint(node.name.as_ref()), "up")
+                        (Color::Green.paint(format!("{}", node.name)), "up")
                     } else {
-                        (Color::Red.paint(node.name.as_ref()), "DOWN")
+                        (Color::Red.paint(format!("{}", node.name)), "DOWN")
                     };
 
                 let _ =
