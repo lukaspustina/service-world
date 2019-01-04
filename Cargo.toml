@@ -20,7 +20,7 @@ travis-ci = { repository = "lukaspustina/service-world", branch = "master" }
 
 [features]
 bin-discover = ["ansi_term", "clap", "tabwriter"]
-bin-present = ["clap", "rocket", "rocket_codegen"]
+bin-present = ["clap", "rocket"]
 
 [[bin]]
 name = "sw-discover"
@@ -46,6 +46,5 @@ toml = "^0.4"
 ansi_term = { version = "^0.11", optional = true }
 clap = { version = "^2.27", optional = true }
 tabwriter = { version = "^1.0", optional = true }
-rocket = { version = "^0.3.6", optional = true }
-rocket_codegen = { version = "^0.3.6", optional = true }
+rocket = { version = "0.4", optional = true }
 

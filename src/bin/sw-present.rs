@@ -1,5 +1,4 @@
-#![feature(plugin)]
-#![plugin(rocket_codegen)]
+#![feature(proc_macro_hygiene, decl_macro)]
 
 // Ignore Clippy lints
 #![allow(unknown_lints)]
@@ -7,6 +6,7 @@
 #[macro_use]
 extern crate error_chain;
 extern crate clap;
+#[macro_use]
 extern crate rocket;
 extern crate serde;
 extern crate service_world;
@@ -124,14 +124,14 @@ mod web {
         })
     }
 
-    #[error(404)]
+    #[catch(404)]
     fn not_found(_: &Request) -> String {
         "not implemented".to_string()
     }
 
     pub fn launch_rocket(config: Config, consul: Consul) -> Result<()> {
         let rocket = rocket::ignite()
-            .catch(errors![not_found])
+            .register(catchers![not_found])
             .mount("/", routes![index, services])
             .manage(config)
             .manage(consul);
