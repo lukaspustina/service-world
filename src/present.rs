@@ -71,7 +71,7 @@ impl<'a> Services<'a> {
         })
     }
 
-    pub fn render(&self, template_file: &str, mut w: &mut Write) -> Result<()> {
+    pub fn render(&self, template_file: &str, mut w: &mut dyn Write) -> Result<()> {
         let mut handlebars = Handlebars::new();
         handlebars.register_helper("len", Box::new(handlebars_helper::vec_len_formatter));
 
@@ -112,7 +112,7 @@ mod handlebars_helper {
     }
 }
 
-pub fn gen_index_html(config: &Config, w: &mut Write) -> Result<()> {
+pub fn gen_index_html(config: &Config, w: &mut dyn Write) -> Result<()> {
     let template_name = "index";
 
     let template_filename = config.present.templates.get(template_name).ok_or_else(|| {
@@ -132,7 +132,7 @@ pub fn gen_index_html(config: &Config, w: &mut Write) -> Result<()> {
     Ok(())
 }
 
-pub fn gen_services_html(config: &Config, consul: &Consul, w: &mut Write) -> Result<()> {
+pub fn gen_services_html(config: &Config, consul: &Consul, w: &mut dyn Write) -> Result<()> {
     let template_name = "services";
 
     let template_filename = config.present.templates.get(template_name).ok_or_else(|| {

@@ -211,13 +211,13 @@ impl Consul {
     ) -> Result<Catalog> {
         let mut client = SyncClient::new(vec![self.url.clone()])?;
 
-        let service_filter: Box<Fn(&String) -> bool> = if let Some(services) = services {
+        let service_filter: Box<dyn Fn(&String) -> bool> = if let Some(services) = services {
             Box::new(move |x| services.contains(x))
         } else {
             Box::new(|_x| true)
         };
 
-        let tag_filter: Box<Fn(&String) -> bool> = if let Some(tags) = tags {
+        let tag_filter: Box<dyn Fn(&String) -> bool> = if let Some(tags) = tags {
             Box::new(move |x| tags.contains(x))
         } else {
             Box::new(|_x| true)

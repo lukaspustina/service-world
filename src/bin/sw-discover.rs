@@ -89,7 +89,7 @@ fn build_cli() -> App<'static, 'static> {
         )
 }
 
-fn terminal_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
+fn terminal_output(w: &mut dyn Write, catalog: &Catalog) -> Result<()> {
     let mut tw = TabWriter::new(vec![]).padding(1);
     for service_name in catalog.services() {
         let _ = writeln!(
@@ -132,7 +132,7 @@ fn terminal_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
     write!(w, "{}", out_str).chain_err(|| ErrorKind::OutputError)
 }
 
-fn terminal_details_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
+fn terminal_details_output(w: &mut dyn Write, catalog: &Catalog) -> Result<()> {
     let mut tw = TabWriter::new(vec![]).padding(1);
     for service_name in catalog.services() {
         let _ = writeln!(
@@ -194,7 +194,7 @@ fn terminal_details_output(w: &mut Write, catalog: &Catalog) -> Result<()> {
     write!(w, "{}", out_str).chain_err(|| ErrorKind::OutputError)
 }
 
-fn json_output(mut w: &mut Write, catalog: &Catalog) -> Result<()> {
+fn json_output(mut w: &mut dyn Write, catalog: &Catalog) -> Result<()> {
     serde_json::to_writer_pretty(&mut w, catalog).chain_err(|| ErrorKind::OutputError)
 }
 
