@@ -1,0 +1,24 @@
+[Unit]
+Description="Service World web server"
+Requires=network.target
+
+[Service]
+Type=simple
+
+User=root
+Group=root
+
+Environment="TZ=Europe/Berlin"
+Environment="RUST_BACKTRACE=1"
+Environment="RUST_LOG=warn,service_world=info"
+Environment="ROCKET_ENV=prod"
+
+WorkingDirectory=/etc/sw-present/
+
+ExecStart=/usr/sbin/sw-present -c /etc/sw-present/sw-present.conf --rocket
+
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

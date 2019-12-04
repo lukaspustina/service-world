@@ -13,6 +13,9 @@ chmod 644 /etc/sw-present/Rocket.toml
 chown root:root /etc/init/sw-present.conf
 chmod 644 /etc/init/sw-present.conf
 
+chown root:root /etc/systemd/system/sw-present.service
+chmod 644 /etc/systemd/system/sw-present.service
+
 chown root:root /usr/bin/sw-discover
 chmod 755 /usr/bin/sw-discover
 
