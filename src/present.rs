@@ -80,7 +80,7 @@ impl<'a> Services<'a> {
             .register_template_file(template_name, template_file)
             .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
         handlebars
-            .renderw("service_overview", self, &mut w)
+            .render_template_to_write("service_overview", self, &mut w)
             .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
 
         Ok(())
@@ -88,13 +88,9 @@ impl<'a> Services<'a> {
 }
 
 mod handlebars_helper {
-    use handlebars::{Handlebars, Helper, RenderContext, RenderError};
+    use handlebars::{Context, Handlebars, Helper, HelperResult, RenderContext, Output};
 
-    pub fn vec_len_formatter(
-        h: &Helper,
-        _: &Handlebars,
-        rc: &mut RenderContext,
-    ) -> ::std::result::Result<(), RenderError> {
+    pub fn vec_len_formatter(h: &Helper, _: &Handlebars, _: &Context, _: &mut RenderContext, out: &mut dyn Output) -> HelperResult {
         let vec_len = if let Some(param) = h.param(0) {
             if let Some(v) = param.value().as_array() {
                 v.len()
@@ -106,7 +102,7 @@ mod handlebars_helper {
         };
 
         let f = format!("{}", vec_len);
-        rc.writer.write_all(f.as_bytes())?;
+        out.write(&f)?;
 
         Ok(())
     }
@@ -125,7 +121,7 @@ pub fn gen_index_html(config: &Config, w: &mut dyn Write) -> Result<()> {
     handlebars
         .register_template_file(template_name, template_file)
         .chain_err(|| ErrorKind::TemplateError(template_name.to_string()))?;
-    handlebars.renderw("index", config, w).chain_err(|| {
+    handlebars.render_template_to_write("index", config, w).chain_err(|| {
         ErrorKind::TemplateError(template_name.to_string())
     })?;
 
