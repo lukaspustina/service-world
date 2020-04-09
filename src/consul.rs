@@ -33,8 +33,8 @@ impl Client for SyncClient {
         let uri: Uri = uri_str.parse().chain_err(|| {
             ErrorKind::ConsulError("could not parse url".to_string())
         })?;
-        let hyper = HyperClient::new(&self.core.handle());
-        let call = hyper.get(uri).and_then(|res| res.body().concat2()).map(
+        let hyper = HyperClient::new();
+        let call = hyper.get(uri).and_then(|res| res.into_body().concat2()).map(
             |body| {
                 let json = str::from_utf8(&body).chain_err(|| {
                     ErrorKind::ConsulError("Failed to read JSON".to_string())
@@ -76,9 +76,9 @@ fn consul_calls_by_services<T: DeserializeOwned>(
             let uri: Uri = uri_str.parse().chain_err(|| {
                 ErrorKind::ConsulError("could not parse url".to_string())
             })?;
-            let hyper = HyperClient::new(&core.handle());
+            let hyper = HyperClient::new();
             let service_name = service.to_string();
-            let call = hyper.get(uri).and_then(|res| res.body().concat2()).map(
+            let call = hyper.get(uri).and_then(|res| res.into_body().concat2()).map(
                 |body| {
                     let json = str::from_utf8(&body).chain_err(|| {
                         ErrorKind::ConsulError(format!(
