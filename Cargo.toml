@@ -34,7 +34,7 @@ required-features = ["bin-present"]
 
 [dependencies]
 error-chain = "^0.12"
-futures = "0.1"
+futures = "0.3"
 handlebars = "^3"
 hyper = "0.12"
 serde = "^1"
